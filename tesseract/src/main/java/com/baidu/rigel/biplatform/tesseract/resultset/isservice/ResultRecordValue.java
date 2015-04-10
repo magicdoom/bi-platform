@@ -80,10 +80,7 @@ public class ResultRecordValue implements java.io.Serializable {
      * 
      */
     public  ResultRecordValue add(ResultRecordValue augend) {
-        if (augend.isNumberic) {
-            return new ResultRecordValue(this.realValue.add(augend.realValue).toString());
-        }
-        throw new UnsupportedOperationException();
+        return new ResultRecordValue(this.realValue.add(augend.realValue).toString());
     }
 
 
@@ -94,10 +91,7 @@ public class ResultRecordValue implements java.io.Serializable {
      * @return ResultRecordValue
      */
     public ResultRecordValue subtract(ResultRecordValue subtrahend) {
-        if (subtrahend.isNumberic) {
-            return new ResultRecordValue(this.realValue.subtract(subtrahend.realValue).toString());
-        }
-        throw new UnsupportedOperationException();
+        return new ResultRecordValue(this.realValue.subtract(subtrahend.realValue).toString());
     }
 
 
@@ -107,10 +101,7 @@ public class ResultRecordValue implements java.io.Serializable {
      * @return ResultRecordValue
      */
     public ResultRecordValue multiply(ResultRecordValue multiplicand) {
-        if (multiplicand.isNumberic) {
-            return new ResultRecordValue(this.realValue.subtract(multiplicand.realValue).toString());
-        }
-        throw new UnsupportedOperationException();
+        return new ResultRecordValue(this.realValue.subtract(multiplicand.realValue).toString());
     }
 
     /**
@@ -121,10 +112,7 @@ public class ResultRecordValue implements java.io.Serializable {
      * @return ResultRecordValue
      */
     public ResultRecordValue divide(ResultRecordValue divisor, int scale, int roundingMode) {
-        if (divisor.isNumberic) {
-            return new ResultRecordValue(this.realValue.subtract(divisor.realValue).toString());
-        }
-        throw new UnsupportedOperationException();
+        return new ResultRecordValue(this.realValue.subtract(divisor.realValue).toString());
     }
 
     /* (non-Javadoc)

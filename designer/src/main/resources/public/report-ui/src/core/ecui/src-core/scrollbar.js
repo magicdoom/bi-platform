@@ -74,7 +74,7 @@ _oRange         - 滑动按钮的合法滑动区间
                         '" style="position:absolute;top:0px;left:0px"></div><div class="' +
                         type + '-next' + this.Button.TYPES +
                         '" style="position:absolute;top:0px;left:0px"></div><div class="' +
-                        this.Thumb.TYPES + '" style="position:absolute"></div>';
+                        this.Thumb.TYPES + '" style="position:absolute;left:0px"></div>';
             },
             function (el, options) {
                 // 使用 el 代替 children
@@ -150,6 +150,9 @@ _oRange         - 滑动按钮的合法滑动区间
     function UI_SCROLLBAR_CHANGE(scrollbar) {
         var parent = scrollbar.getParent(),
             uid;
+
+        // 滚动时刻触发事件，会降低性能，目前有场景用到
+        triggerEvent(parent, 'scrollimmediately', false);
 
         if (parent) {
             parent.$scroll();
@@ -508,11 +511,13 @@ _oRange         - 滑动按钮的合法滑动区间
 
         //__gzip_original__next
         var bodyWidth = this.getBodyWidth(),
-            prevHeight = this.$$paddingTop,
+            prevHeight = this.$$paddingTop-1,
+            // 竖直滚动条宽度不使用其父级宽度，用自身宽度
+            prevWidth = this.$$width,
             next = this._uNext;
 
         // 设置滚动按钮与滑动按钮的信息
-        this._uPrev.$setSize(bodyWidth, prevHeight);
+        this._uPrev.$setSize(prevWidth, prevHeight);
         next.$setSize(bodyWidth, this.$$paddingBottom);
         this._uThumb.$setSize(bodyWidth);
         next.setPosition(0, this.getBodyHeight() + prevHeight);

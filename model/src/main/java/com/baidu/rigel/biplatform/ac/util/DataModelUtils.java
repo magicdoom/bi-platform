@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.GregorianCalendar;
 import java.util.LinkedList;
 import java.util.List;
@@ -212,7 +213,7 @@ public class DataModelUtils {
         List<HeadField> columnLeafs = getLeafNodeList(dataModel.getColumnHeadFields());
         List<HeadField> rowLeafs = getLeafNodeList(dataModel.getRowHeadFields());
         if (type.equals(FillDataType.COLUMN)) {
-            if (!CollectionUtils.isEmpty(columnLeafs)) {
+            if (!CollectionUtils.isEmpty(columnLeafs) && dataModel.getColumnBaseData () != null) {
                 for (int i = 0; i < columnLeafs.size(); i++) {
                     columnLeafs.get(i).setCompareDatas(dataModel.getColumnBaseData().get(i));
                 }
@@ -308,6 +309,7 @@ public class DataModelUtils {
             }
         }
         fillColumnData(dataModel, FillDataType.ROW);
+        logger.info ("[INFO] ---- ---- ---- ---- ---- after remove filter blank row ,current dataModel is : " + dataModel);
         return blankRowCount;
     }
 
@@ -318,10 +320,10 @@ public class DataModelUtils {
      * @param rowHeadFields datamodel行上节点
      */
     public static void removeField(HeadField field, List<HeadField> rowHeadFields) {
+        HeadField parentField = field.getParentLevelField();
         if (field.getParentLevelField() != null) {
-            HeadField parentField = field.getParentLevelField();
             parentField.getNodeList().remove(field);
-            if (parentField.getNodeList().isEmpty()) {
+            if (parentField.getChildren ().isEmpty() && parentField.getNodeList ().isEmpty ()) {
                 removeField(parentField, rowHeadFields);
             }
         } else {
@@ -673,5 +675,46 @@ public class DataModelUtils {
         }
         
     }
+
+	public static void sortDataModelBySort(DataModel dataModel,
+			SortRecord sortRecord, Comparator<HeadField> headFieldComparator) {
+		if (sortRecord != null && StringUtils.isNotBlank(sortRecord.getSortColumnUniquename())
+                && !sortRecord.getSortType().equals(SortType.NONE)) {
+            try {
+                int index =
+                        DataModelUtils.foundIndexByLeafeValue(dataModel.getColumnHeadFields(),
+                                sortRecord.getSortColumnUniquename());
+                dataModel.setOperateIndex(index);
+                sortByRow(dataModel, sortRecord.getSortType(), headFieldComparator);
+            } catch (Exception e) {
+                logger.warn("can not sort by  columnName:" + sortRecord.getSortColumnUniquename());
+            }
+        }
+	}
+
+	private static void sortByRow(DataModel dataModel, SortType sort,
+			Comparator<HeadField> headFieldComparator) throws IllegalAccessException {
+		if (dataModel == null) {
+            throw new IllegalArgumentException("can not sort empty dataModel!");
+        }
+        fillFieldData(dataModel, FillDataType.ROW);
+        buildSortSummary(dataModel);
+        sortListHeadFields(dataModel.getRowHeadFields(), sort, headFieldComparator);
+        fillColumnData(dataModel, FillDataType.ROW);
+	}
+
+	private static void sortListHeadFields(List<HeadField> headFields,
+			SortType sort, Comparator<HeadField> headFieldComparator) {
+		 if (CollectionUtils.isNotEmpty(headFields)) {
+	            for (HeadField filed : headFields) {
+	                sortListHeadFields(filed.getNodeList(), sort, headFieldComparator);
+	                sortListHeadFields(filed.getChildren(), sort, headFieldComparator);
+	                for (HeadField child : filed.getChildren()) {
+	                    sortListHeadFields(child.getNodeList(), sort, headFieldComparator);
+	                }
+	            }
+	            Collections.sort(headFields, headFieldComparator);
+	        }
+	}
 
 }

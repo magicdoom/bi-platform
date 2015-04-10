@@ -154,7 +154,7 @@ public final class ResourceUtils {
      * @param axisItem
      * @return
      */
-    public static List<ItemViewObject> buildItemViewObject(Schema schema,
+    private static List<ItemViewObject> buildItemViewObject(Schema schema,
             String cubeId, Item[] axisItem, Set<String> usedItemOlapIdSet) {
         if (axisItem == null || axisItem.length == 0) {
             return Lists.newArrayList();

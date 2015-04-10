@@ -231,10 +231,11 @@ $namespace('di.product.display.ui');
         }
 
         function onfailure(url, xhr, rspText) {
-            alert(
-                    '获取depict失败：url=' + url
-                    + ' status=' + xhr.status
-            );
+            // 因为在实际项目中，该报警无实际意义，所以暂时注释掉该失败提示
+            // alert(
+            //         '获取depict失败：url=' + url
+            //         + ' status=' + xhr.status
+            // );
         }
 
         function getRemoteDepictRef() {

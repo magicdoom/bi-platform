@@ -141,6 +141,7 @@ public class FileUtils {
     public static void deleteFile(File target) {
         if (target.isFile() && target.exists()) {
             target.delete();
+            LOGGER.warn("delete file:"+target.getAbsolutePath());
             return;
         }
         File[] fileArr = target.listFiles();
@@ -386,7 +387,7 @@ public class FileUtils {
             fileOutputStream = new FileOutputStream(file);
             // 写入本地
             fileOutputStream.write(content);
-            fileOutputStream.close();
+            fileOutputStream.flush();
             result = true;
         } catch (IOException e) {
             LOGGER.info(String.format(LogInfoConstants.INFO_PATTERN_FILEPROCESS_ERROR,
@@ -401,6 +402,7 @@ public class FileUtils {
                     LOGGER.info(String.format(LogInfoConstants.INFO_PATTERN_FILEPROCESS_ERROR,
                         "IOException"));
                     LOGGER.error(e.getMessage(), e);
+                    
                     return false;
                 }
             }

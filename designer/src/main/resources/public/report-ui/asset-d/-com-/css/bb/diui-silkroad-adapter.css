@@ -11,8 +11,8 @@
 
 .comp-box {
     width: 100%;
-    height: 90%;
-    overflow: auto
+    height: 100%;
+    overflow: auto;
 }
 .component-item {
     /*overflow: auto;*/

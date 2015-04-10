@@ -104,6 +104,7 @@ $namespace('di.shared.ui');
         var key;
         var exportHandler = this.DEF.exportHandler;
         this._uChart.attach('chartClick', this.$chartClick, this);
+        this._uChart.attach('changeRadioButton', this.$changeRadioButton, this);
         // 事件绑定
         for (key in exportHandler) {
             var id = exportHandler[key].datasourceId;
@@ -121,7 +122,13 @@ $namespace('di.shared.ui');
             ['sync.error.' + key, this.$handleOfflineDownloadError, this],
             ['sync.complete.' + key, this.$syncEnable, this, key]
         );
-
+        this.getModel().attach(
+            ['sync.preprocess.CHANGE_RADIOBUTTON', this.$syncDisable, this, 'CHANGE_RADIOBUTTON'],
+            ['sync.result.CHANGE_RADIOBUTTON', this.$renderMain, this],
+            ['sync.result.CHANGE_RADIOBUTTON', this.$handleDataLoaded, this],
+            ['sync.error.CHANGE_RADIOBUTTON', this.$handleDataError, this],
+            ['sync.complete.CHANGE_RADIOBUTTON', this.$syncEnable, this, 'CHANGE_RADIOBUTTON']
+        );
         foreachDo(
             [
                 this.getModel(),
@@ -313,7 +320,8 @@ $namespace('di.shared.ui');
          * @event
          */
         this.$di('dispatchEvent', this.$diEvent('dataerror', options));
-        DIALOG.alert('获取图形数据异常：' + ejsonObj.statusInfo);
+        // 暂时注释掉报错提示，用以解决当商桥嵌入报表时页签快速切换的频繁弹窗问题
+        // DIALOG.alert('获取图形数据异常：' + ejsonObj.statusInfo);
     };
 
     /**
@@ -355,6 +363,26 @@ $namespace('di.shared.ui');
             'dispatchEvent',
             'rowselect',
             [params]
+        );
+    };
+
+    /**
+     * 图形中切换指标
+     *
+     * @protected
+     */
+    DI_ECHART_CLASS.$changeRadioButton = function (index) {
+        var componentId = this.$di('getId').split('.')[1];
+        var paramList = {
+            componentId: componentId,
+            index: index
+        };
+        this.$sync(
+            this.getModel(),
+            'CHANGE_RADIOBUTTON',
+            paramList,
+            null,
+            this.$di('getEvent')
         );
     };
 

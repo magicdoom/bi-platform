@@ -15,16 +15,15 @@
  */
 package com.baidu.rigel.biplatform.ma.resource.cache;
 
-import javax.annotation.Resource;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.Cache;
 import org.springframework.cache.Cache.ValueWrapper;
-import org.springframework.cache.CacheManager;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.baidu.rigel.biplatform.cache.StoreManager;
 import com.baidu.rigel.biplatform.ma.report.exception.CacheOperationException;
 
 /**
@@ -45,15 +44,15 @@ public class CacheManagerForResource {
     /**
      * cache manager
      */
-    @Resource
-    private CacheManager cacheManager = null;
+    @Autowired
+    private StoreManager cacheManager = null;
     
     /**
      * 
      * @return
      */
     protected Cache getCache() {
-        return cacheManager.getCache("bi_platform");
+        return cacheManager.getDataStore ("bi_platform");
     }
     
     /**
@@ -67,7 +66,7 @@ public class CacheManagerForResource {
         if (cache == null) {
             return null;
         }
-        ValueWrapper wrapper = getCache().get(key);
+        ValueWrapper wrapper = cache.get(key);
         if (wrapper == null) {
             logger.info("can not get obj from cache with key : " + key);
             return null;
@@ -109,13 +108,13 @@ public class CacheManagerForResource {
         cache.evict(key);
     }
     
-    /**
-     * 
-     * @param cacheManager
-     */
-    protected void setCacheManager(CacheManager cacheManager) {
-        this.cacheManager = cacheManager;
-    }
+//    /**
+//     * 
+//     * @param cacheManager
+//     */
+//    protected void setCacheManager(CacheManager cacheManager) {
+//        this.cacheManager = cacheManager;
+//    }
 
     /**
      * 

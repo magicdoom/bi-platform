@@ -4,9 +4,9 @@ define(['template'], function (template) {
         $data=$data||{};
         var $utils=template.utils,$helpers=$utils.$helpers,$escape=$utils.$escape,id=$data.id,$out='';$out+='<div class="comp-box di-o_o-block" data-o_o-di="';
         $out+=$escape(id);
-        $out+='">\n    <div data-o_o-di="';
+        $out+='">\r\n    <div data-o_o-di="';
         $out+=$escape(id);
-        $out+='-vu-chart"></div>\n</div>';
+        $out+='-vu-chart"></div>\r\n</div>';
         return $out;
     }
     return { render: anonymous };

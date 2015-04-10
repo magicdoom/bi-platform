@@ -33,11 +33,10 @@ import com.baidu.rigel.biplatform.ma.report.model.Item;
 public class QueryAction implements Serializable {
     
     /**
-     * QueryAction.java -- long
-     * description:
+     * QueryAction.java -- long description:
      */
     private static final long serialVersionUID = 61085589512178310L;
-
+    
     /**
      * id 无业务含义
      */
@@ -56,32 +55,39 @@ public class QueryAction implements Serializable {
     /**
      * 查询行轴信息 key item's id
      */
-    private Map<Item, Object> columns = new LinkedHashMap<Item, Object>();
+    private Map<Item, Object> columns = new LinkedHashMap<Item, Object> ();
     
     /**
      * 下载的维度值
      */
-    private Map<Item, Object> drillDimValues = new LinkedHashMap<Item, Object>();
+    private Map<Item, Object> drillDimValues = new LinkedHashMap<Item, Object> ();
     
     /**
      * 查询列轴信息 key为具体 item's id
      */
-    private Map<Item, Object> rows = new LinkedHashMap<Item, Object>();
+    private Map<Item, Object> rows = new LinkedHashMap<Item, Object> ();
     
     /**
      * 查询过滤描述信息 key为具体维度或者指标id，value为过滤值
      */
-    private Map<Item, Object> slices = new LinkedHashMap<Item, Object>();
-
+    private Map<Item, Object> slices = new LinkedHashMap<Item, Object> ();
+    
     /**
      * 是否是图查询
      */
     private boolean chartQuery;
     
     private MeasureOrderDesc measureOrderDesc;
-
+    
+    /**
+     * 
+     */
     private boolean filterBlank = false;
     
+    /**
+     * 是否需要采用二八原则进行统计分析
+     */
+    private boolean needOthers = false;
     
     /**
      * 构造函数
@@ -89,9 +95,9 @@ public class QueryAction implements Serializable {
      * QueryAction
      */
     public QueryAction() {
-        columns = new LinkedHashMap<Item, Object>();
-        rows = new LinkedHashMap<Item, Object>();
-        slices = new LinkedHashMap<Item, Object>();
+        columns = new LinkedHashMap<Item, Object> ();
+        rows = new LinkedHashMap<Item, Object> ();
+        slices = new LinkedHashMap<Item, Object> ();
     }
     
     public String getId() {
@@ -166,49 +172,51 @@ public class QueryAction implements Serializable {
     
     /**
      * 生成标示当前查询动作的唯一标示
+     * 
      * @return 当前查询动作的唯一标示
      */
     public String getDistinctId() {
-        StringBuilder key = new StringBuilder();
-        key.append(this.extendAreaId);
-        key.append(this.queryPath);
-        key.append(parseToKeyStr(rows));
-        key.append(parseToKeyStr(columns));
-        key.append(parseToKeyStr(slices));
-        return Base64.getEncoder().encodeToString(key.toString().getBytes());
+        StringBuilder key = new StringBuilder ();
+        key.append (this.extendAreaId);
+        key.append (this.queryPath);
+        key.append (parseToKeyStr (rows));
+        key.append (parseToKeyStr (columns));
+        key.append (parseToKeyStr (slices));
+        return Base64.getEncoder ()
+                .encodeToString (key.toString ().getBytes ());
     }
     
     private StringBuilder parseToKeyStr(Map<Item, Object> values) {
-        StringBuilder key = new StringBuilder();
-        for (Map.Entry<Item, Object> entry : values.entrySet()) {
-            key.append(entry.getKey().getOlapElementId());
-            Object value = entry.getValue();
+        StringBuilder key = new StringBuilder ();
+        for (Map.Entry<Item, Object> entry : values.entrySet ()) {
+            key.append (entry.getKey ().getOlapElementId ());
+            Object value = entry.getValue ();
             if (value instanceof Object[]) {
                 String[] tmp = (String[]) value;
                 for (String str : tmp) {
-                    key.append(str);
+                    key.append (str);
                 }
             } else {
-                key.append(value);
+                key.append (value);
             }
         }
         return key;
     }
-
+    
     /**
      * @return the drillDimValues
      */
     public Map<Item, Object> getDrillDimValues() {
         return drillDimValues;
     }
-
+    
     /**
-     * @param drillDimValues the drillDimValues to set
+     * @param drillDimValues
+     *            the drillDimValues to set
      */
     public void setDrillDimValues(Map<Item, Object> drillDimValues) {
         this.drillDimValues = drillDimValues;
     }
-
     
     /**
      * @return the chartQuery
@@ -216,7 +224,7 @@ public class QueryAction implements Serializable {
     public boolean isChartQuery() {
         return chartQuery;
     }
-
+    
     public void setChartQuery(boolean chartQuery) {
         this.chartQuery = chartQuery;
     }
@@ -227,15 +235,15 @@ public class QueryAction implements Serializable {
     public MeasureOrderDesc getMeasureOrderDesc() {
         return measureOrderDesc;
     }
-
+    
     /**
-     * @param measureOrderDesc the measureOrderDesc to set
+     * @param measureOrderDesc
+     *            the measureOrderDesc to set
      */
     public void setMeasureOrderDesc(MeasureOrderDesc measureOrderDesc) {
         this.measureOrderDesc = measureOrderDesc;
     }
-
-
+    
     /**
      * 
      * @author david.wang
@@ -262,7 +270,7 @@ public class QueryAction implements Serializable {
          * recordSize
          */
         private final int recordSize;
-            
+        
         /**
          * 
          * @param name
@@ -270,43 +278,50 @@ public class QueryAction implements Serializable {
          * @param recordSize
          */
         public MeasureOrderDesc(String name, String orderType, int recordSize) {
-            super();
+            super ();
             this.name = name;
             this.orderType = orderType;
             this.recordSize = recordSize;
         }
-
+        
         /**
          * @return the name
          */
         public String getName() {
             return name;
         }
-
+        
         /**
          * @return the orderType
          */
         public String getOrderType() {
             return orderType;
         }
-
+        
         /**
          * @return the recordSize
          */
         public int getRecordSize() {
             return recordSize;
         }
-            
+        
+        /**
+         * 
+         */
+        @Override
+        public String toString() {
+            return "name = " + this.name + " type = " + this.orderType + " recordSize = " + this.recordSize;
+        }
     }
-
+    
     /**
      * 
      * @param filterBlank
      */
     public void setFilterBlank(boolean filterBlank) {
-        this.filterBlank  = filterBlank;
+        this.filterBlank = filterBlank;
     }
-
+    
     /**
      * @return the filterBlank
      */
@@ -314,5 +329,12 @@ public class QueryAction implements Serializable {
         return filterBlank;
     }
     
+    public boolean isNeedOthers() {
+        return needOthers;
+    }
+    
+    public void setNeedOthers(boolean needOthers) {
+        this.needOthers = needOthers;
+    }
     
 }

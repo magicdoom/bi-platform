@@ -2,23 +2,81 @@
  * xui.ui.HChart
  * Copyright 2012 Baidu Inc. All rights reserved.
  *
- * @file:    基于highcharts的js图
+ * @file:    基于ECharts的js图
  *           (最早源自pl-charts.js by cxl(chenxinle))
- * @author:  sushuang(sushuang@baidu.com)
+ * @author:  sushuang(sushuang)
  * @depend:  xui, xutil, echarts
  */
 
 (function () {
+    var stringTemplate = xutil.string.template;
     var addClass = xutil.dom.addClass;
     var removeClass = xutil.dom.removeClass;
     var q = xutil.dom.q;
     var domChildren = xutil.dom.children;
+    var domGetParent = xutil.dom.getParent;
     var getPreviousSibling = xutil.dom.getPreviousSibling;
+    var getNextSibling = xutil.dom.getNextSibling;
     var inheritsObject = xutil.object.inheritsObject;
     var formatNumber = xutil.number.formatNumber;
-//    var extend = xutil.object.extend;
+    var isArray = xutil.lang.isArray;
+    var attachEvent = xutil.dom.attachEvent;
+    var detachEvent = xutil.dom.detachEvent;
     var XOBJECT = xui.XObject;
-//    var DI_ATTR_PREFIX = '\x06diA^_^';
+    // 图空间样式设置
+    var styleConfiguration = {
+        textStyle: {
+            fontFamily: '微软雅黑',
+            fontSize: '12',
+            color: '#636363'
+        },
+        // 图例
+        legendStyle: {
+            fontFamily: '微软雅黑',
+            fontSize: '12',
+            color: '#000'
+        },
+        // tips
+        tooltips: {
+            fontFamily: '微软雅黑',
+            fontSize: '12',
+            color: '#fff'
+        },
+        // 地图值域
+        dataRangeStyle : {
+            fontFamily: '微软雅黑',
+            fontSize: '12',
+            color: '#000'
+        },
+        // 地图值域色阶
+        dataRangeColor : [
+            '#F06112',
+            '#29B2DC'
+        ],
+        // 轴线
+        lineStyle: {
+            color: '#00AEF3',
+            type: 'solid',
+            width: 2
+        },
+        // 网格线
+        splitLine : {
+            show:true,
+            lineStyle: {
+                color: '#EEEEEE',
+                type: 'solid',
+                width: 1
+            }
+        },
+        // 网格区域
+        splitArea : {
+            show: true,
+            areaStyle:{
+                color:['rgba(255, 255, 255, 0)','rgba(237, 237, 237, 0.3)']
+            }
+        }
+    };
+
     /**
      * 基于e-chart的JS图
      *
@@ -35,8 +93,7 @@
                 var type = this._sType;
                 // FIXME:优化，header估计得干掉
                 el.innerHTML = [
-                    '<div class="' + type + '-header">',
-                    '</div>',
+                    '<div class="' + type + '-header"></div>',
                     '<div class="' + type + '-content"></div>'
                 ].join('');
                 this._eHeader = el.childNodes[0];
@@ -48,8 +105,7 @@
     /**
      * 初始化
      */
-    UI_E_CHART_CLASS.init = function () {
-    };
+    UI_E_CHART_CLASS.init = function () {};
 
     /**
      * 设置数据
@@ -104,7 +160,18 @@
          *      }
          *  ];
          */
-        this._aSeries = dataWrap.series || [];
+        // 晓强测试
+        /*
+        dataWrap.series[0].data[0]=10;
+        dataWrap.series[0].data[1]=20;
+        dataWrap.series[0].data[2]=30;
+        dataWrap.series[0].data[3]=40;
+        dataWrap.series[0].data[4]=30;
+        dataWrap.series[0].data[5]=20;
+        dataWrap.series[0].data[6]=10;
+        dataWrap.series[0].barMaxWidth=10;
+        */
+        this._aSeries = dataWrap.series || []; //barMaxWidth  yAxisName
         /**
          * 用户自定义rangeselector的按钮
          * 例如：
@@ -149,48 +216,39 @@
     //------------------------------------------
 
     /**
+     * 判断图表是否显示图例，并设置默认选项
+     *
+     * @protected
+     */
+    UI_E_CHART_CLASS.$getDefaultMeasures = function (chartType){
+        return (this._defaultMeasures
+                && this._defaultMeasures.length > 0
+                && chartType != 'line'
+            ) ? [this._defaultMeasures[0]] : this._defaultMeasures;
+    };
+
+    /**
      * 生成指标切换按钮
      *
      * @protected
      */
     UI_E_CHART_CLASS.$renderCheckBoxs = function () {
-        var me = this;
-        var allMeasures = me._allMeasures;
-        var defaultMeasures = me._defaultMeasures;
-        var measureHtml = [];
+        var me = this,
+            allMeasures = me._allMeasures,
+            defaultMeasures = me.$getDefaultMeasures(me._chartType),
+            measureHtml = [];
 
         // 渲染图形中备选区模块
         if (allMeasures.length > 0) {
-            if (this._chartType === 'pie') {
+            if (this._chartType === 'line') {
                 // 多选
-                for (var i = 0; i < allMeasures.length; i ++) {
+                /**由于商桥的需求，折线图没有checkbox显示
+                for (var i = 0, iLen = allMeasures.length; i < iLen; i ++) {
                     measureHtml.push(
-                        '<label>',
-                        allMeasures[i],
-                        '</label>',
-                        '<input type="radio" name="echarts-candidate" ',
-                        isInArray(allMeasures[i], defaultMeasures) ? 'checked="checked" ' : '',
-                        '/>'
-                    );
-                }
-                this._eHeader.innerHTML = '<div class="echarts-candidate" id="echarts-candidate">'
-                    + measureHtml.join('')
-                    + '</div>';
-                this._eCandidateBox = domChildren(this._eHeader)[0];
-                this._eCandidateBox.onclick = function (ev) {
-                    candidateClick.call(me, ev || window.event);
-                };
-            }
-            else {
-                // 多选
-                for (var i = 0; i < allMeasures.length; i ++) {
-                    measureHtml.push(
-                        '<label>',
-                        allMeasures[i],
-                        '</label>',
                         '<input type="checkbox" name="echarts-candidate" ',
                         isInArray(allMeasures[i], defaultMeasures) ? 'checked="checked" ' : '',
-                        '/>'
+                        '/>',
+                        '<label>',allMeasures[i],'</label>'
                     );
                 }
                 this._eHeader.innerHTML = '<div class="echarts-candidate" id="echarts-candidate">'
@@ -198,28 +256,77 @@
                     + '</div>';
                 // 绑定备选区按钮事件
                 this._eCandidateBox = domChildren(this._eHeader)[0];
-                this._eCandidateBox.onclick = function (ev) {
-                    candidateClick.call(me, ev || window.event);
-                };
+                attachEvent(this._eCandidateBox, 'click', function (ev) {
+                    var oEv = ev || window.event;
+                    var target = oEv.target || oEv.srcElement;
+                    candidateClick.call(me, target);
+                });
+                **/
+            }
+            else {
+                // 单选
+                var radioName = 'echarts-candidate-radio-' + new Date().getTime();
+                for (var i = 0,  iLen = allMeasures.length; i < iLen; i ++) {
+                    var checkAbr = isInArray(allMeasures[i], defaultMeasures) ? 'checked="checked"' : '';
+                    var radioId = [
+                       'allMeasures-radio',
+                        new Date().getTime(),
+                        i
+                    ].join('');
+                    var opt = {
+                        rName: radioName,
+                        rId: radioId,
+                        checked: checkAbr,
+                        text: allMeasures[i]
+                    };
+                    var tpl = '<input type="radio" name="#{rName}" id="#{rId}" #{checked} /><label for="#{rId}">#{text}</label>';
+                    measureHtml.push(stringTemplate(tpl, opt));
+                }
+                me._eHeader.innerHTML = stringTemplate(
+                    '<div class="echarts-candidate" id="echarts-candidate">#{html}</div>',
+                    {
+                        html: measureHtml.join('')
+                    }
+                );
+                me._eCandidateBox = domChildren(me._eHeader)[0];
+                var inputRadios = me._eCandidateBox.getElementsByTagName('input');
+
+                for (var i = 0, iLen = inputRadios.length; i < iLen; i ++) {
+                    inputRadios[i].onclick = (function (j) {
+                        return function () {
+                            me.notify('changeRadioButton', String(j));
+                        }
+                    })(i);
+                }
             }
         }
     };
+
+
     // 备选区按钮点击事件
-    function candidateClick(ev) {
+    function candidateClick(oTarget) {
         var resultName = '';
-        var oTarget = ev.target;
 
         if (oTarget.tagName.toLowerCase() === 'input') {
-            resultName = getPreviousSibling(oTarget).innerHTML;
+            resultName = getNextSibling(oTarget).innerHTML;
             if (oTarget.type === 'radio') {
                 this._defaultMeasures = [resultName];
             }
             else {
-                // oTarget.checked = oTarget.checked ? false : true;
-                this._defaultMeasures = getCurrentCandidate(resultName, this._defaultMeasures);
+                // 如果是多选，那么限制不能少于一个
+                var chkBoxs = domChildren(domGetParent(oTarget));
+                for (var sum = 0, i = 0, iLen = chkBoxs.length; i < iLen; i ++) {
+                    if (chkBoxs[i].type === 'checkbox' && chkBoxs[i].checked) {
+                        sum ++ ;
+                    }
+                }
+                if (sum === 0) {
+                    oTarget.checked = true;
+                }
+                else {
+                    this._defaultMeasures = getCurrentCandidate(resultName, this._defaultMeasures);
+                }
             }
-
-            //this.$disposeHeader();
             this.$disposeChart();
             this.$createChart(this.$initOptions());
         }
@@ -264,21 +371,33 @@
         var seryKind = {};
         var tempData = [];
         var xAxis = this._aXAxis;
-        var defaultMeasures = this._defaultMeasures;
-
+        var colors =  [
+            '#A5D6D2', '#C1232B', '#B5C334', '#4cc6f7','#FCCE10',
+            '#E87C25', '#27727B', '#FAD860', '#F3A43B', '#60C0DD'
+        ];
         for (var i = 0, ser, serDef; serDef = this._aSeries[i]; i ++) {
             seryKind[serDef.type] = seryKind[serDef.type]
                 ? seryKind[serDef.type] + 1
                 : 1;
             ser = { data: [] };
             ser.name = serDef.name || '';
-            ser.yAxisIndex = serDef.yAxisIndex || 0;
-            ser.color = serDef.color || void 0;
+            ser.colorDefine = serDef.colorDefine || void 0;
             ser.format = serDef.format || void 0;
             ser.type = (serDef.type === 'column' ? 'bar' : serDef.type);
+            if (ser.type !== 'map' && ser.type !== 'pie') {
+                ser.itemStyle = {
+                    normal: {
+                        color: colors[i]
+                    }
+                };
+                if (ser.colorDefine) {
+                    ser.itemStyle.normal.color = ser.colorDefine;
+                }
+            }
             (serDef.id !== null) && (ser.id = serDef.id);
             // TODO:这个data需要后端注意一下数据格式
             ser.data = serDef.data;
+            var defaultMeasures = this.$getDefaultMeasures(ser.type);
             if (defaultMeasures) {
                 if (ser.type === 'bar') {
                     if (isInArray(ser.name, defaultMeasures)) {
@@ -298,6 +417,10 @@
                     }
                 }
                 else if (ser.type === 'line') {
+                    // 在有两个以上的指标时进行双轴设定 - 博学
+                    if (this._aSeries.length > 1) {
+                        ser.yAxisIndex = serDef.yAxisIndex || 0;
+                    }
                     ser.symbol = 'none'; // 线图上的点的形状
                     if (isInArray(ser.name, defaultMeasures)) {
                         tempData.push(ser);
@@ -336,6 +459,7 @@
                     series.push(ser);
                 }
                 else if (ser.type === 'line') {
+                    ser.yAxisIndex = 0;
                     tempData.push(ser);
                 }
                 else if (ser.type === 'map') {
@@ -379,6 +503,11 @@
             }
             series = targetSeries;
         }
+        if (this._chartType === 'bar') {
+            for (var i = 0, iLen = series.length; i < iLen; i ++) {
+                series[i].data = series[i].data.reverse();
+            }
+        }
         options.series = series;
     };
     /**
@@ -393,8 +522,42 @@
             axisLine: {
                 onZero: false
             },
-            data: this._aXAxis.data
+            data: this._aXAxis.data,
+            // 设置x轴字体样式
+            axisLabel: {
+                textStyle: styleConfiguration.textStyle
+            },
+            // x方向网格线 - 博学
+            splitLine : styleConfiguration.splitLine
         };
+        // 设置x轴颜色
+        xAxis.axisLine.lineStyle = styleConfiguration.lineStyle;
+        if (this._aXAxis.type === 'date') {
+            xAxis.showDataType = 'date';
+        }
+        // 如果是柱状图Y轴放右边（条形图X轴和Y周和其他的相反） - 晓强
+        if (this._chartType === 'bar') {
+            xAxis.position = 'right';
+            // 当图形为条形图时，暂时将动画关掉，以避免条形从左向右铺开的动画效果 update by majun
+            options.animation = false;
+            options.grid.x = 20;
+            options.grid.x2 = 130;
+
+            // Y轴调到右边需要数据翻转 晓强
+            if (options.series && options.series.length > 0) {
+                var series = options.series;
+                for (var i = 0, len = series.length; i < len; i++) {
+                    var sData = series[i].data;
+
+                    for (var j = 0, jLen = sData.length; j < jLen; j++) {
+                        if (sData[j] > 0) {
+                            sData[j] =  -1 * sData[j];
+                        }
+                    }
+                }
+            }
+        }
+
         // 如果是正常图形（柱形图与线图），那么x轴在下面显示
         if (this._chartType === 'column' || this._chartType === 'line') {
             options.xAxis = xAxis;
@@ -403,6 +566,7 @@
 
         }
         else {
+            xAxis.data = xAxis.data.reverse();
             options.yAxis = xAxis;
         }
         return options;
@@ -414,6 +578,7 @@
      * @private
      */
     UI_E_CHART_CLASS.$setupYAxis = function (options) {
+        var that = this;
         if (this._chartType !== 'pie') {
             var yAxis = [];
             if (this._aYAxis && this._aYAxis.length > 0) {
@@ -422,23 +587,48 @@
                     yAxisOption = {};
                     yAxisOption.name = option.title.text;
                     yAxisOption.type = 'value';
-                    yAxisOption.splitArea = { show : true };
-                   // yAxisOption.boundaryGap = [0.1, 0.1];
-                    yAxisOption.splitNumber = 5;
-//                    if (option.title.text) {
-//                        yAxisOption.axisLabel = {
-//                            formatter: '{value} '+ option.title.text
-//                        }
-//                    }
+                    // 设置y轴网格 - 博学
+                    yAxisOption.splitArea = styleConfiguration.splitArea;
+                    yAxisOption.splitLine = styleConfiguration.splitLine;
                     yAxis.push(yAxisOption);
                 }
             }
             else {
                 yAxisOption = {};
                 yAxisOption.type = 'value';
-                yAxisOption.splitArea = { show : true };
-                // yAxisOption.boundaryGap = [0.1, 0.1];
-                yAxisOption.splitNumber = 5;
+
+                // y轴添加单位 - 晓强
+                yAxisOption.axisLabel = yAxisOption.axisLabel || {};
+                yAxisOption.axisLabel.formatter = function (value) {
+                    var resultStr;
+                    // 确定可以转换成数字
+                    if (!Number.isNaN(value/1)) {
+                        // Y轴调到右边需要数据翻转
+                        if (that._chartType === 'bar') {
+                            value = -1 * value;
+                        }
+                        resultStr = value;
+                        var w = 10000;
+                        var y = 1000000000;
+
+                        if (value >= w && value <= y) {
+                            resultStr = (value / w).toFixed(0) + '万';
+                        }
+                        else if (value >= y) {
+                            resultStr = (value / y).toFixed(0) + '亿';
+                        }
+                    }
+
+                    return resultStr;
+                };
+                // 字体修改 - 晓强 (字体修改为微软雅黑，12px - 博学)
+                yAxisOption.axisLabel.textStyle = styleConfiguration.textStyle;
+                // y轴颜色设定
+                yAxisOption.axisLine = yAxisOption.axisLine || {};
+                yAxisOption.axisLine.lineStyle = styleConfiguration.lineStyle;
+                // 设置y轴网格 - 博学
+                yAxisOption.splitArea = styleConfiguration.splitArea;
+                yAxisOption.splitLine = styleConfiguration.splitLine;
                 yAxis.push(yAxisOption);
             }
             if (this._isAddYxis && yAxis.length <= 1) {
@@ -458,10 +648,50 @@
             }
         }
         if (this._chartType === 'bar') {
+            // 数据为空时横轴显示修改 博学
+            var xAxisSeries = [];
+            var xAxisData = [];
+            // 为0的数据个数
+            var sum = 0;
+            // 判断数据书否全部为0
+            var nowxAxis = 0;
+            var arrSeries = options.series;
+            // 判断是否查出数据，没有数据情况判断方式是数据为0
+            for (var i = 0; i < arrSeries.length; i ++) {
+                xAxisData.push(arrSeries[i].data.length);
+                for (var j = 0; j < arrSeries[i].data.length; j ++) {
+                    if (arrSeries[i].data[j] == 0) {
+                        sum = sum + 1;
+                    }
+                }
+                xAxisSeries.push(sum);
+                sum = 0;
+            }
+            // 通过判断为0数据并对same进行累加为判断数据准备
+            for (var i = 0; i < xAxisSeries.length; i ++) {
+                if (xAxisSeries[i] == xAxisData[i]) {
+                    nowxAxis = nowxAxis + 1;
+                }
+            }
+            if(xAxisSeries.length == nowxAxis && xAxisData.length == nowxAxis) {
+                yAxis[0].max = 0;
+                yAxis[0].min = -10;
+            }
             options.xAxis = yAxis;
         }
-        if (this._chartType === 'column' || this._chartType === 'line') {
+        if (this._chartType === 'column') {
             options.yAxis = yAxis;
+        }
+        if (this._chartType === 'line') {
+            // 超过两个指标时进行y轴格式设定 - 博学
+            if (options.series.length > 1) {
+                // 多于两个指标时显示双y轴
+                yAxis[1] = yAxis[0];
+                options.yAxis = yAxis;
+            }
+            else {
+                options.yAxis = yAxis;
+            }
         }
     };
     /**
@@ -470,21 +700,24 @@
      * @protected
      */
     UI_E_CHART_CLASS.$setupLegend = function (options) {
+
+        // 控制图例位置 需要同事修改下面两处 - 晓强
+        // 控制图例位置 UI_E_CHART_CLASS.$setupLegend
+        // 控制grid的位置 UI_E_CHART_CLASS.$initOptions
         var legend = {
-            // orient: 'vertical',
             x: 'center',
-            y: 'bottom'
-//            padding: 5
-//            borderColor: '#ccc',
-//            borderWidth: 0.5
+            y: '20'
         };
         var data = [];
-        var defaultMeasures = this._defaultMeasures;
-
+        var defaultMeasures = this.$getDefaultMeasures(this._chartType);
         if (this._chartType === 'pie') {
             for (var i = 0; i < this._aXAxis.data.length; i++) {
                 data[i] = this._aXAxis.data[i];
             }
+        }
+        // 地图的指标现在都是单指标，所以不需要展示这一图例，暂时将其隐藏   update by majun
+        if (this._chartType === 'map') {
+        	legend.show = false;
         }
         else {
             if (this._aSeries && this._aSeries.length > 0) {
@@ -501,7 +734,11 @@
             }
         }
         legend.data = data;
-        options.legend = legend;
+        if (this._chartType === 'line') {
+            // 更改折线图图例字体
+            legend.textStyle = styleConfiguration.legendStyle;
+            options.legend = legend;
+        }
     };
     /**
      * 设置工具箱
@@ -509,7 +746,6 @@
      * @protected
      */
     UI_E_CHART_CLASS.$setupToolBox = function (options) {
-        var toolbox;
         var series;
         var itemChartType = {};
         var chartTypeLen = 0;
@@ -527,19 +763,7 @@
             if (series.length === 1 || chartTypeLen >= 2) {
                 return;
             }
-            toolbox = {
-                show: true,
-                orient : 'horizontal',
-                x: 'right',
-                y : 'top',
-                feature : {
-                    magicType : {show: true, type: ['stack', 'tiled']}
-                }
-            };
-            options.toolbox = toolbox;
         }
-
-
     };
     /**
      * 设置dataRoom
@@ -568,7 +792,6 @@
                 ? true
                 : enableSelectRange;
             dataZoom.show = enableSelectRange;
-//            setupRangSelector.call(this, options, enableSelectRange);
 
             dataZoom.realtime = true;
             if (this._zoomStart === 0) {
@@ -584,194 +807,160 @@
             else {
                 dataZoom.end = Math.round(101 / xNums * this._zoomEnd);
             }
+
+            // 动态设置dataRoom的垂直定位 - 晓强
+            // dataZoom.y = $(this.el).height() - 50;
+            this.el.offsetHeight - 50;
             options.dataZoom = dataZoom;
         }
-
     };
-//    function setupRangSelector(options, enabled) {
-//        var me = this;
-//        var xDatas;
-//        // 禁用rangeselector的情况
-//        if (!enabled) {
-//            return;
-//        }
-//
-//        xDatas = me._aXAxis.data;
-//        createRangeHtml.call(me);
-//
-//        me._zoomButtons.onclick = function (ev) {
-//            var target = ev.target;
-//            if (ev.target.tagName.toLowerCase() === 'span') {
-//                me._zoomSelectedButton = Number(target.getAttribute('selRangeIndex'));
-//                me._oldZoomSelectButton && removeClass(me._oldZoomSelectButton, 'zoom-button-focus');
-//                addClass(ev.target, 'zoom-button-focus');
-//                me._oldZoomSelectButton = target;
-//                me._zoomStart = (me._zoomSelectedButton == 0)
-//                    ? 0
-//                    : (xDatas.length - (me._zoomSelectedButton * 30));
-//                me._zoomStart = (me._zoomStart <= 0)
-//                    ? 0
-//                    : me._zoomStart;
-//                me._zoomEnd = xDatas.length - 1;
-//            }
-//            // TODO:校验，如果所选时间的长度大于当前时间存在的时间，就不重绘，没必要，因为展现的东西还是一样的
-//            me.render();
-//        };
-//        var oMinDate = q('zoomMin', this._zoomDateRange)[0];
-//        var oMaxDate = q('zoomMax', this._zoomDateRange)[0];
-//        // 当from to改变后，render图形
-//        document.onkeydown = function() {
-//            if (event.keyCode === 13) {
-//                dateRangeChange.call(me, oMinDate, oMaxDate);
-//            }
-//        };
-//        oMinDate.onblur = function () {
-//            dateRangeChange.call(me, oMinDate, oMaxDate);
-//        };
-//        oMaxDate.onblur = function () {
-//            dateRangeChange.call(me, oMinDate, oMaxDate);
-//        };
-//
-//        var min = xDatas[me._zoomStart];
-//        var max = xDatas[me._zoomEnd];
-//        oMinDate.value = min;
-//        oMaxDate.value = max;
-//        me._oldMinDate = min;
-//        me._oldMaxDate = max;
-//    }
-    // 创建html元素
-//    function createRangeHtml() {
-//        var buttons;
-//        var axisType = this._aXAxis.type;
-//        this._zoomSelectedButton = (this._zoomSelectedButton === undefined)
-//            ? 0
-//            : this._zoomSelectedButton;
-//        if (axisType === 'date') {
-//            buttons = [
-//                { type: 'month', count: 1, text: '1月' },
-//                { type: 'month', count: 2, text: '2月' },
-//                { type: 'all', count: 0, text: '全部' }
-//            ];
-//        }
-//        else if (axisType === 'month') {
-//            buttons = [
-//                { type: 'month', count: 6, text: '6月' },
-//                { type: 'year', count: 12, text: '1年' },
-//                { type: 'all', count: 0, text: '全部' }
-//            ];
-//        }
-//        else {
-//            buttons = [
-//                { type: 'all', count: 0, text: '全部' }
-//            ];
-//        }
-//
-//        // zoom按钮html模板
-//        var buttonsHtml = [
-//            '<ul class="zoom-buttons">'
-//        ];
-//        for (var i = 0, len = buttons.length; i < len; i++) {
-//            // li模版：<li><span selRangeIndex="1" class="zoom-button-focus">1月</span></li>
-//            buttonsHtml.push(
-//                '<li>',
-//                '<span selRangeIndex ="', buttons[i].count, '"',
-//                    this._zoomSelectedButton == buttons[i].count
-//                    ? ' class="zoom-button-focus"'
-//                    : '',
-//                '>', buttons[i].text, '</span>',
-//                '</li>'
-//            );
-//        }
-//        buttonsHtml.push('</ul>');
-//        // 时间范围html模板
-//        var selectRangeHtml = [
-//            '<div class="zoom-dateRange">',
-//            '<span>From:</span>',
-//            '<input class="zoomMin" type="text">',
-//            '<span>To:</span>',
-//            '<input class="zoomMax" type="text">',
-//            '</div>'
-//        ].join('');
-//        this._eHeader.innerHTML = buttonsHtml.join('') + selectRangeHtml;
-//
-//        this._zoomButtons = domChildren(this._eHeader)[0];
-//        this._oldZoomSelectButton = q('zoom-button-focus', this._zoomButtons)[0];
-//        this._zoomDateRange = domChildren(this._eHeader)[1];
-//    }
-    // 当时间range改变后
-//    function dateRangeChange(oMinDate, oMaxDate) {
-//        var xDatas = this._aXAxis.data;
-//        var start;
-//        var end;
-//        var minDate = oMinDate.value;
-//        var maxDate = oMaxDate.value;
-//        for (var i = 0, iLen = xDatas.length; i < iLen; i++) {
-//            if (minDate === xDatas[i]) {
-//                start = i;
-//            }
-//            if (maxDate === xDatas[i]) {
-//                end = i;
-//            }
-//        }
-//        if ((start === 0 || start) && end) {
-//            if ((xDatas[start] === this._oldMinDate)
-//                && (xDatas[end] === this._oldMaxDate)
-//                ) {
-//                return;
-//            }
-//            this._zoomStart = start;
-//            this._zoomEnd = end;
-//            var oZoomSelBtn = q('zoom-button-focus', this._zoomButtons)[0];
-//            oZoomSelBtn && removeClass(oZoomSelBtn, 'zoom-button-focus');
-//            this._zoomSelectedButton = -1;
-//            this.render();
-//        }
-//        else {
-//            oMinDate.value = this._oldMinDate;
-//            oMaxDate.value = this._oldMaxDate;
-//        }
-//    }
+
+    //------------------------------------------
+    // 设置图形tooltip区域
+    //------------------------------------------
     /**
      * 设置提示浮层
      *
      * @protected
      */
-    UI_E_CHART_CLASS.$setupTooptip = function (options) {
+    UI_E_CHART_CLASS.$setupTooltip = function (options) {
+        var me = this;
         var toolTip = {};
-
         if (this._chartType === 'pie') {
-            toolTip.formatter = "{a} <br/>{b} : {c} ({d}%)";
+            toolTip.formatter = '{a} <br/>{b} : {c} ({d}%)';
             toolTip.trigger = 'item';
+            // 设置提示字体
+            toolTip.textStyle =styleConfiguration.tooltips;
         }
         else if (this._chartType === 'map') {
             toolTip.trigger = 'item';
+            toolTip.formatter = function (data) {
+                return mapToolTipFunc(data, options.series);
+            };
+            // 设置提示字体
+            toolTip.textStyle = styleConfiguration.tooltips;
+        }
+        else if (this._chartType === 'bar') {
+            toolTip.trigger = 'axis';
+            toolTip.formatter =  function(data, ticket, callback) {
+                var res = data[0][1];
+                for (var i = 0, l = data.length; i < l; i++) {
+                    var valueFormat = options.series[i].format;
+                    var valueLable = data[i][2];
+                    // Y轴调到右边需要数据翻转 晓强
+                    if (me._chartType === 'bar') {
+                        valueLable = -1 * valueLable;
+                    }
+                    // 当发现图数据有配置format属性时，按format所示进行展示
+                    // 当没有format的时候，展示原值
+                    if (valueFormat) {
+                        valueLable = formatNumber(
+                                valueLable,
+                                valueFormat,
+                                null,
+                                null,
+                                true
+                        );
+                    }
+                    
+                    res += '<br/>' + data[i][0] + ' : ' + valueLable;
+                }
+                return res;
+            };
+            // 设置提示字体 - 博学
+            toolTip.textStyle = styleConfiguration.tooltips;
         }
         else {
             toolTip.trigger = 'axis';
             // 在此将提示信息的format属性加上以便方便显示
             toolTip.formatter =  function(data, ticket, callback) {
                 var res = data[0][1];
+                // 如果为date类型则设置显示周
+                if (options.xAxis.showDataType === 'date'){
+                    var weekStr = ['周日','周一','周二','周三','周四','周五','周六'][new Date(data[0][1]).getDay()];
+                    res = res + ' （' + weekStr + '）';
+                }
                 for (var i = 0, l = data.length; i < l; i++) {
+
                     var valueFormat = options.series[i].format;
                     var valueLable = data[i][2];
+
                     // 当发现图数据有配置format属性时，按format所示进行展示
                     // 当没有format的时候，展示原值
                     if (valueFormat) {
                         valueLable = formatNumber(
-                            data[i][2],
-                            valueFormat,
-                            null,
-                            null,
-                            true
+                                data[i][2],
+                                valueFormat,
+                                null,
+                                null,
+                                true
                         );
+                    }
+                    // Y轴调到右边需要数据翻转 晓强
+                    if (me._chartType === 'bar') {
+                        valueLable = -1 * valueLable;
                     }
                     res += '<br/>' + data[i][0] + ' : ' + valueLable;
                 }
                 return res;
-            }
+            };
+            toolTip.textStyle = styleConfiguration.tooltips;
         }
         options.tooltip = toolTip;
     };
+    /**
+     * 地图tooltip
+     *
+     * @private
+     */
+    function mapToolTipFunc(data, series) {
+        var names,
+            areaValue,
+            areaName = data[1],
+            str = areaName;
+
+        data[0] && (names = data[0].split(' '));
+        if (isArray(names)) {
+            for (var i = 0, iLen = names.length; i < iLen; i ++) {
+                for (var j = 0, jLen = series.length; j < jLen; j++) {
+                    if (series[j].name === names[i]) {
+                        areaValue = getAreaValue(areaName, series[j].data, series[i].format);
+                        str += '<br/>' + series[j].name + ':' + areaValue;
+                    }
+                }
+            }
+        }
+        else {
+            str += ': -';
+        }
+        return str;
+    }
+    /**
+     * 根据地图地区名获取值
+     *
+     * @private
+     */
+    function getAreaValue(areaName, dataArray, format) {
+        var result= '';
+
+        for (var x = 0, xLen = dataArray.length; x < xLen; x++) {
+
+            if (dataArray[x].name === areaName) {
+                result = dataArray[x].value;
+                if (format) {
+                    result = formatNumber(
+                        result,
+                        format,
+                        null,
+                        null,
+                        true
+                    );
+                    break;
+                }
+            }
+        }
+        return result;
+    }
 
     /**
      * 重新渲染图表
@@ -779,17 +968,23 @@
      * @public
      */
     UI_E_CHART_CLASS.render = function () {
-        this.$disposeChart();
+        var tpl,
+            me = this;
+        me.$disposeChart();
         // 如果没有数据，图形显示空
-        if (!this._aSeries || this._aSeries.length == 0) {
-            this._eContent.innerHTML = ''
-                + '<div class="' + this._sType + '-empty">'
-                +     this._sEmptyHTML
-                + '</div>';
+        if (!me._aSeries || me._aSeries.ledngth == 0) {
+            tpl = '<div class="#{dClass}-empty">#{html}</div>';
+            me._eContent.innerHTML = stringTemplate(
+                tpl,
+                {
+                    dClass: me._sType,
+                    html: me._sEmptyHTML
+                }
+            )
             return;
         }
-        this.$preload();
-        this.$createChart(this.$initOptions());
+        me.$preload();
+        me.$createChart(me.$initOptions());
     };
 
     /**
@@ -799,9 +994,6 @@
      */
     UI_E_CHART_CLASS.$createChart = function (options) {
         var that = this;
-        var start;
-        var end;
-        var xDatas = this._aXAxis.data;
         this._oChart = echarts.init(this._eContent);
         this._oChart.setOption(options);
         this._oChart.on(echarts.config.EVENT.CLICK, chartClick);
@@ -812,21 +1004,6 @@
             };
             that.notify('chartClick', o);
         }
-//        if (!this._chartType === 'pie') {
-//            this._oChart.on(echarts.config.EVENT.DATA_ZOOM, zoomChage);
-//        }
-
-//        function zoomChage(param) {
-//            start = param.zoom.xStart;
-//            end = param.zoom.xEnd;
-//            changeDateRange();
-//        }
-//        function changeDateRange() {
-//            var oMinDate = q('zoomMin', this._zoomDateRange)[0];
-//            var oMaxDate = q('zoomMax', this._zoomDateRange)[0];
-//            oMinDate.value = xDatas[start];
-//            oMaxDate.value = xDatas[end - 1];
-//        }
     };
     /**
      * 构建图表参数
@@ -834,47 +1011,57 @@
      * @private
      */
     UI_E_CHART_CLASS.$initOptions = function () {
-        var options = {
-            grid: {
-                x: '90px',
-                y: '10px',
-                borderWidth: 0
-            }
-        };
+        var options = {};
 
         this.$setupSeries(options);
-        this.$setupTooptip(options);
+        this.$setupTooltip(options);
         if (
             this._chartType === 'column'
             || this._chartType === 'bar'
             || this._chartType === 'line'
             || this._chartType === 'pie'
         ) {
+            if (this._chartType !== 'pie') {
+                // 控制图例位置 需要同事修改下面两处 - 晓强
+                // 控制图例位置 UI_E_CHART_CLASS.$setupLegend
+                // 控制grid的位置 UI_E_CHART_CLASS.$initOptions
+                options.grid = {
+                    x: 80,
+                    x2: 80,
+                    y: 50,
+                    borderWidth: 0
+                }
+            }
             this.$setupDataRoom(options);
+            // 可视数据区DataRoom影响距y2的值 - 晓强
+            if (options.grid && options.dataZoom) {
+                options.grid.y2 = options.dataZoom.show ? 90 : 33;
+            }
+
             this.$setupToolBox(options);
             this.$setupYAxis(options);
             this.$setupXAxis(options);
         }
         else if (this._chartType === 'map') {
-            options.roamController = {
-                show: true,
-                x: 'right',
-                mapTypeControl: {
-                    'china': true
-                }
-            };
             // TODO:需要后端返回最大最小值
+            if (this._mapMinValue) {
+                this._mapMinValue = 0;
+            }
             options.dataRange = {
                 min: this._mapMinValue,
                 max: this._mapMaxValue,
-                x: 'left',
+                x: 80,
                 y: 'bottom',
                 text:['高','低'],           // 文本，默认为数值文本
-                calculable : true
+                calculable: true,
+                // 设置地图值域字体
+                textStyle: styleConfiguration.dataRangeStyle,
+                color: styleConfiguration.dataRangeColor
             };
         }
         if (this._chartType === 'pie') {
-            options.calculable = true;
+        	// 拖拽重计算在线上项目应用不多，且有bug，先行关闭该高级功能 updata by majun 
+            options.calculable = false;
         }
         this.$setupLegend(options);
         return options;

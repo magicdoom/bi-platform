@@ -14,7 +14,7 @@ define(['url'], function (Url) {
          * @param {boolen} option.isEdit 是否是编辑
          * @constructor
          */
-        initialize: function (option) {
+        initialize: function () {
         },
 
         /**
@@ -30,6 +30,27 @@ define(['url'], function (Url) {
                 url:Url.getSkinType(reportId, type),
                 type: 'POST',
                 success: function () {
+                }
+            });
+        },
+        /**
+         * 更改报表名称
+         *
+         * @param {string} reportId 报表id
+         * @public
+         */
+        editReportName: function (reportId) {
+            $.ajax({
+                type: "GET",
+                dataType: "json",
+                cache: false,
+                timeout: 10000,
+                url: Url.editReportName(reportId),
+                success: function(data){
+                    if (data["status"] === 0) {
+                        var reportName = data["data"].name;
+                        $('.reportName').html(reportName);
+                    }
                 }
             });
         }

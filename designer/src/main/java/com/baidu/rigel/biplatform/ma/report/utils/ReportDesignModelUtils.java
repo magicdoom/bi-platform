@@ -184,7 +184,7 @@ public final class ReportDesignModelUtils {
         
         if (cube.getDimensions() != null) {
 //            OlapElement dim = cube.getDimensions().get(dimOrIndId);
-            Object[] tmp =  cube.getDimensions().values().stream().filter(dim -> {
+            Object[] tmp =  cube.getDimensions().values().stream().filter (dim -> dim != null).filter(dim -> {
                     return dimOrIndId.equals(dim.getId()) || dimOrIndId.equals(dim.getName());
             }).toArray();
             if (tmp != null && tmp.length == 1) {
@@ -196,7 +196,7 @@ public final class ReportDesignModelUtils {
         
         if (cube.getMeasures() != null) {
 //            OlapElement measure = cube.getMeasures().get(dimOrIndId);
-            Object[] tmp= cube.getMeasures().values().stream().filter(m ->{
+            Object[] tmp= cube.getMeasures().values().stream().filter(m -> m != null).filter(m ->{
                     return dimOrIndId.equals(m.getId()) || dimOrIndId.equals(m.getName());
             }).toArray();
             if (tmp != null && tmp.length == 1) {

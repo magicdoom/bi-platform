@@ -42,6 +42,7 @@ import com.baidu.rigel.biplatform.ac.model.Dimension;
 import com.baidu.rigel.biplatform.ac.model.Level;
 import com.baidu.rigel.biplatform.ac.model.LevelType;
 import com.baidu.rigel.biplatform.ac.query.data.DataSourceInfo;
+import com.baidu.rigel.biplatform.cache.StoreManager;
 import com.baidu.rigel.biplatform.tesseract.datasource.DataSourcePoolService;
 import com.baidu.rigel.biplatform.tesseract.exception.MetaException;
 import com.baidu.rigel.biplatform.tesseract.isservice.event.InitMiniCubeEvent;
@@ -49,7 +50,6 @@ import com.baidu.rigel.biplatform.tesseract.isservice.event.InitMiniCubeEvent.In
 import com.baidu.rigel.biplatform.tesseract.isservice.event.UpdateIndexByDatasourceEvent;
 import com.baidu.rigel.biplatform.tesseract.meta.DimensionMemberService;
 import com.baidu.rigel.biplatform.tesseract.meta.MetaDataService;
-import com.baidu.rigel.biplatform.tesseract.store.service.StoreManager;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;

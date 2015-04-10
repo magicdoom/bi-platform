@@ -1652,7 +1652,6 @@
                 // 缓存，防止多次reflow
                 x = control.getX(),
                 y = control.getY();
-
             currStyle.left = x + 'px';
             currStyle.top = y + 'px';
             currStyle.position = 'absolute';

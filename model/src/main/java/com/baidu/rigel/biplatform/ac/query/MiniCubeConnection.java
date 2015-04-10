@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.baidu.rigel.biplatform.ac.exception.MiniCubeQueryException;
 import com.baidu.rigel.biplatform.ac.model.Cube;
@@ -174,6 +176,7 @@ public interface MiniCubeConnection {
      */
     public static class ConnectionUtil {
         
+        private static final Logger LOG = LoggerFactory.getLogger (ConnectionUtil.class);
             /**
          * 刷新当前connection的缓存
          */
@@ -184,7 +187,12 @@ public interface MiniCubeConnection {
             if (!StringUtils.isEmpty(conditions)) {
                 params.put(PARAMS, conditions);
             }
+            LOG.info ("=========================update data detail info =========================");
+            LOG.info ("========================= url : {}", ConfigInfoUtils.getServerAddress ());
+            LOG.info ("========================= request params : {}", params); 
             String responseJson = HttpRequest.sendPost(ConfigInfoUtils.getServerAddress() + "/refresh", params);
+            LOG.info ("========================= response : {}", responseJson);
+            
             ResponseResult responseResult = AnswerCoreConstant.GSON.fromJson(responseJson, ResponseResult.class);
             if (responseResult.getData() != null) {
                 return true;

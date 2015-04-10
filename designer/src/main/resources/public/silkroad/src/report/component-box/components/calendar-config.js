@@ -265,8 +265,8 @@ define(
             type: 'TIME_COMP',
             caption: '日历',
             iconClass: 'calendar',
-            defaultWidth: 500,
-            defaultHeight: 47,
+            defaultWidth: 300,
+            defaultHeight: 33,
             vm: {
                 render: function (data) {
                     return CalendarVmTemplate.render({

@@ -391,13 +391,13 @@
         { "filePath": "<%= prop.dirECUIExt %>/ext-pager.js", "depends": ["ecuiBaseJS", "<%= prop.dirECUIExt %>/pager.js"] },
 
         // xui （包含了全部）
-        { "filePath": "<%= prop.dirXUI %>/e-chart.js", "depends": ["xuiuiBaseJS", "<%= prop.srcEcharts %>",  "<%= prop.srcEchartsMap %>"] },
-        // htmlClean
-        { "filePath": "<%= prop.dirSrcCore %>/jquery/jquery.htmlClean.js", "depends": ["<%= prop.srcJquery %>"] },
-
-        // json lint
-        { "filePath": "<%= prop.dirSrcCore %>/jsonlint/jsl.parser.js", "depends": ["<%= prop.srcJquery %>"] },
-        { "filePath": "<%= prop.dirSrcCore %>/jsonlint/jsl.format.js", "depends": ["<%= prop.srcJquery %>"] }
+        { "filePath": "<%= prop.dirXUI %>/e-chart.js", "depends": ["xuiuiBaseJS", "<%= prop.srcEchartsMap %>"] }
+//        // htmlClean
+//        { "filePath": "<%= prop.dirSrcCore %>/jquery/jquery.htmlClean.js", "depends": ["<%= prop.srcJquery %>"] },
+//
+//        // json lint
+//        { "filePath": "<%= prop.dirSrcCore %>/jsonlint/jsl.parser.js", "depends": ["<%= prop.srcJquery %>"] },
+//        { "filePath": "<%= prop.dirSrcCore %>/jsonlint/jsl.format.js", "depends": ["<%= prop.srcJquery %>"] }
     ],
 
     /** 

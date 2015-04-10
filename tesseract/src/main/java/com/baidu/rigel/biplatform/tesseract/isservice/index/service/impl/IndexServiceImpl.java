@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -34,11 +35,13 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.baidu.rigel.biplatform.ac.model.Cube;
 import com.baidu.rigel.biplatform.ac.query.data.DataSourceInfo;
+import com.baidu.rigel.biplatform.cache.StoreManager;
 import com.baidu.rigel.biplatform.tesseract.dataquery.service.DataQueryService;
 import com.baidu.rigel.biplatform.tesseract.datasource.DataSourcePoolService;
 import com.baidu.rigel.biplatform.tesseract.datasource.impl.SqlDataSourceWrap;
@@ -63,7 +66,6 @@ import com.baidu.rigel.biplatform.tesseract.node.meta.NodeState;
 import com.baidu.rigel.biplatform.tesseract.node.service.IndexAndSearchClient;
 import com.baidu.rigel.biplatform.tesseract.node.service.IsNodeService;
 import com.baidu.rigel.biplatform.tesseract.resultset.TesseractResultSet;
-import com.baidu.rigel.biplatform.tesseract.store.service.StoreManager;
 import com.baidu.rigel.biplatform.tesseract.util.FileUtils;
 import com.baidu.rigel.biplatform.tesseract.util.IndexFileSystemConstants;
 import com.baidu.rigel.biplatform.tesseract.util.TesseractConstant;
@@ -77,6 +79,7 @@ import com.baidu.rigel.biplatform.tesseract.util.isservice.LogInfoConstants;
  *
  */
 @Service("indexService")
+
 public class IndexServiceImpl implements IndexService {
 	/**
 	 * LOGGER
@@ -96,6 +99,9 @@ public class IndexServiceImpl implements IndexService {
 	 * RESULT_KEY_MAXID
 	 */
 	private static final String RESULT_KEY_MAXID = "RESULT_KEY_MAXID";
+	
+	@Value("${index.indexInterval}")
+    private int indexInterval;
 
 	/**
 	 * indexMetaService
@@ -389,7 +395,22 @@ public class IndexServiceImpl implements IndexService {
 		LOGGER.info(String.format(LogInfoConstants.INFO_PATTERN_FUNCTION_BEGIN,
 				"doIndexByIndexAction", "[indexMeta:" + indexMeta
 						+ "][idxAction:" + idxAction + "]"));
-		IndexMeta idxMeta = indexMeta;
+		IndexMeta idxMeta = this.indexMetaService.getIndexMetaByIndexMetaId(indexMeta.getIndexMetaId(), indexMeta.getStoreKey());
+		
+		if ((idxMeta.getLocked().equals(Boolean.FALSE)) || ((System.currentTimeMillis()-idxMeta.getIdxVersion()) > this.indexInterval)) {
+			idxMeta.setLocked(Boolean.TRUE);
+			this.indexMetaService.saveIndexMetaLocally(idxMeta);
+		}else {
+			LOGGER.info(String.format(
+					LogInfoConstants.INFO_PATTERN_FUNCTION_PROCESS,
+					"doIndexByIndexAction",
+					"[indexMeta:" + indexMeta.getIndexMetaId() + ", Locked:"
+							+ idxMeta.getLocked() + ", last update:"
+							+ idxMeta.getIdxVersion() + " ,indexInterval:"
+							+ this.indexInterval + ",test (System.currentTimeMillis()-idxMeta.getIdxVersion()):"+(System.currentTimeMillis()-idxMeta.getIdxVersion())+"]","[skip index]"));
+			return ;
+		}		
+		
 		if (idxMeta == null || idxAction == null) {
 			LOGGER.info(String.format(
 					LogInfoConstants.INFO_PATTERN_FUNCTION_EXCEPTION,
@@ -480,10 +501,14 @@ public class IndexServiceImpl implements IndexService {
 								idxMeta, idxAction, currIdxShardIdx);
 						currIdxShard = idxMeta.getIdxShardList().get(
 								currIdxShardIdx);
+						currIdxShard.setFull(Boolean.FALSE);
 					}
 
 					// 处理
 					Map<String, Object> result = writeIndex(currResult,	idxAction, currIdxShard, isLastPiece, sqlQuery.getIdName());
+					
+					//更新时间戳
+					this.indexMetaService.saveOrUpdateIndexMeta(idxMeta);
 
 					currResult = (TesseractResultSet) result.get(RESULT_KEY_DATA);
 					currMaxId = (BigDecimal) result.get(RESULT_KEY_MAXID);
@@ -496,12 +521,22 @@ public class IndexServiceImpl implements IndexService {
 								|| idxAction
 										.equals(IndexAction.INDEX_MERGE_NORMAL)) {
 							currIdxShardIdx++;
+							if(idxAction.equals(IndexAction.INDEX_MERGE_NORMAL)){
+								idxAction=IndexAction.INDEX_MERGE;
+							}							
+							if(currIdxShardIdx>=idxMeta.getIdxShardList().size()){
+								idxAction=IndexAction.INDEX_NORMAL;
+							}
 						} else {
 							currIdxShardIdx = -1;
+							if (!idxAction.equals(IndexAction.INDEX_MOD)
+									&& !idxAction
+											.equals(IndexAction.INDEX_MERGE_NORMAL)) {
+								idxAction = IndexAction.INDEX_NORMAL;
+							}
 						}
 
-					}
-					if (idxAction.equals(IndexAction.INDEX_MERGE)) {
+					}else if (idxAction.equals(IndexAction.INDEX_MERGE)) {
 						idxAction = IndexAction.INDEX_MERGE_NORMAL;
 					} else if (!idxAction.equals(IndexAction.INDEX_MOD)
 							&& !idxAction
@@ -538,16 +573,37 @@ public class IndexServiceImpl implements IndexService {
 			idxMeta.setIdxState(IndexState.INDEX_AVAILABLE);
 		}
 
-		for (IndexShard idxShard : idxMeta.getIdxShardList()) {
+//		for (IndexShard idxShard : idxMeta.getIdxShardList()) {
+//			if (idxShard.isUpdate()) {
+//				String servicePath = idxShard.getFilePath();
+//				String bakFilePath = idxShard.getIdxFilePath();
+//				idxShard.setIdxFilePath(servicePath);
+//				idxShard.setFilePath(bakFilePath);
+//				idxShard.setIdxState(IndexState.INDEX_AVAILABLE);
+//			} else if (idxAction.equals(IndexAction.INDEX_MERGE)) {
+//				idxMeta.getIdxShardList().remove(idxShard);
+//			}
+//		}
+		
+		Iterator<IndexShard> idxShardIt=idxMeta.getIdxShardList().iterator();
+		while(idxShardIt.hasNext()){
+			IndexShard idxShard=idxShardIt.next();
 			if (idxShard.isUpdate()) {
 				String servicePath = idxShard.getFilePath();
 				String bakFilePath = idxShard.getIdxFilePath();
 				idxShard.setIdxFilePath(servicePath);
 				idxShard.setFilePath(bakFilePath);
+				idxShard.setIdxState(IndexState.INDEX_AVAILABLE);
+				if(idxAction.equals(IndexAction.INDEX_MOD) && (idxShard.getShardId() < idxMeta.getIdxShardList().size())){
+					idxShard.setFull(Boolean.TRUE);
+				}
 			} else if (idxAction.equals(IndexAction.INDEX_MERGE)) {
-				idxMeta.getIdxShardList().remove(idxShard);
+				idxShardIt.remove();
 			}
 		}
+		
+		
+		idxMeta.setLocked(Boolean.FALSE);
 		this.indexMetaService.saveOrUpdateIndexMeta(idxMeta);
 		publistIndexMetaWriteEvent(idxMeta);
 		
@@ -829,4 +885,7 @@ public class IndexServiceImpl implements IndexService {
 		return new IndexMetaIsNullException(sb.toString());
 	}
 
+
+
+    
 }

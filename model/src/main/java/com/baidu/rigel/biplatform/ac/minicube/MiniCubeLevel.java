@@ -79,7 +79,7 @@ public class MiniCubeLevel extends OlapElementDef implements Level {
      * 关联的事实表中的列
      */
     private String factTableColumn;
-
+    
     /**
      * construct with level name
      * 

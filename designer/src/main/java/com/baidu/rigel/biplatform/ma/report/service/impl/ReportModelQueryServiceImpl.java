@@ -36,8 +36,13 @@ import com.baidu.rigel.biplatform.ac.query.MiniCubeConnection;
 import com.baidu.rigel.biplatform.ac.query.MiniCubeDriverManager;
 import com.baidu.rigel.biplatform.ac.query.data.DataModel;
 import com.baidu.rigel.biplatform.ac.query.data.DataSourceInfo;
+import com.baidu.rigel.biplatform.ac.query.model.AxisMeta;
+import com.baidu.rigel.biplatform.ac.query.model.AxisMeta.AxisType;
+import com.baidu.rigel.biplatform.ac.query.model.DimensionCondition;
 import com.baidu.rigel.biplatform.ac.query.model.PageInfo;
+import com.baidu.rigel.biplatform.ac.query.model.QueryData;
 import com.baidu.rigel.biplatform.ac.query.model.QuestionModel;
+import com.baidu.rigel.biplatform.ac.util.MetaNameUtil;
 import com.baidu.rigel.biplatform.ma.ds.exception.DataSourceOperationException;
 import com.baidu.rigel.biplatform.ma.ds.service.DataSourceService;
 import com.baidu.rigel.biplatform.ma.ds.util.DataSourceDefineUtil;
@@ -129,14 +134,15 @@ public class ReportModelQueryServiceImpl implements ReportModelQueryService {
         Level[] parentLevels = dim.getLevels().values().toArray(new Level[0]);
         List<Member> rootMembers = null;
         try {
+            parentLevels[0].setDimension (dim);
             rootMembers = getMembers(cube, dim, parentLevels[0], params, securityKey);
         } catch (MiniCubeQueryException | DataSourceOperationException e) {
-            logger.error("Exception happened when getMemebers of dim " + dim.getName(),
-                    e);
+            logger.error("Exception happened when getMemebers of dim " + dim.getName(), e);
             throw e;
         }
         members.add(rootMembers);
-        if (parentLevels.length > 1) {
+        // 1.equeals(params.get(level)) 只取当前层级
+        if (parentLevels.length > 1 && !"1".equals (params.get (Constants.LEVEL_KEY))) {
             for (int i = 1; i < parentLevels.length; ++i) {
                 List<Member> tmpMember = Lists.newArrayList();
                 for (Member m : rootMembers) {
@@ -217,7 +223,11 @@ public class ReportModelQueryServiceImpl implements ReportModelQueryService {
 //            pageInfo.setPageNo(0);
 //            pageInfo.setPageSize(100);
 //            questionModel.setPageInfo(pageInfo);
-            questionModel.setNeedSummary(false);
+            if (action.getDrillDimValues() == null || !action.getDrillDimValues().isEmpty() || action.isChartQuery()) {
+                questionModel.setNeedSummary(false);
+            } else {
+                questionModel.setNeedSummary(needSummary(questionModel));
+            }
             questionModel.setUseIndex(true);
             if (requestParams != null) {
                 for (String key : requestParams.keySet()) {
@@ -256,5 +266,54 @@ public class ReportModelQueryServiceImpl implements ReportModelQueryService {
         }
         rs.setDataModel(dataModel);
         return rs;
+    }
+
+    private boolean needSummary(QuestionModel questionModel) {
+        for (AxisMeta meta : questionModel.getAxisMetas().values()) {
+            if (meta.getAxisType() == AxisType.ROW) {
+                for (String str : meta.getCrossjoinDims()) {
+                    DimensionCondition condition = (DimensionCondition) questionModel.getQueryConditions().get(str);
+                    if (condition.getQueryDataNodes() == null || condition.getQueryDataNodes().isEmpty()) {
+                        return false;
+                    } else {
+                        List<QueryData> queryDatas = condition.getQueryDataNodes();
+                        for (QueryData queryData : queryDatas) {
+                            if (MetaNameUtil.isAllMemberName(queryData.getUniqueName())) {
+                                return false;
+                            } else {
+                                // TODO 这里需要修改 需要修改为可配置方式
+                                String[] tmp = MetaNameUtil.parseUnique2NameArray(queryData.getUniqueName());
+                                if (tmp[tmp.length - 1].contains(":")) {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Member> getMembers(Cube cube, String uniqueName,
+            Map<String, String> params, String securityKey) {
+        DataSourceDefine dsDefine = null;
+        try {
+            dsDefine = dataSourceService.getDsDefine(cube.getSchema().getDatasource());
+        } catch (DataSourceOperationException e) {
+            logger.error("Fail in Finding datasource define. ", e);
+            throw new RuntimeException(e);
+        }
+        DataSourceInfo dsInfo = DataSourceDefineUtil.parseToDataSourceInfo(dsDefine, securityKey);
+        Member member = cube.lookUp (dsInfo, uniqueName, params);
+        if (member != null) {
+            return member.getChildMembers (cube, dsInfo, params);
+        }
+        return Lists.newArrayList ();
     }  
 }

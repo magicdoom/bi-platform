@@ -60,7 +60,7 @@ public class IndexAndSearchServer {
     /**
      * BIZTHREADSIZE
      */
-    protected static final int BIZTHREADSIZE = 4;
+    protected static final int BIZTHREADSIZE = (int)(Runtime.getRuntime().availableProcessors() * 1.5) ;
     /**
      * bossGroup
      */
@@ -139,6 +139,10 @@ public class IndexAndSearchServer {
      */
     protected void startServer() throws Exception {
         LOGGER.info("Index and Search server ready to start...");
+        LOGGER.info("Server has {0} bossGroup and {1} workerGroup",BIZGROUPSIZE,BIZTHREADSIZE);
+        
+        LOGGER.info("Server has "+BIZGROUPSIZE+" bossGroup and "+BIZTHREADSIZE+" workerGroup");
+        
         long curr = System.currentTimeMillis();
         try {
             ServerBootstrap b = new ServerBootstrap();
@@ -188,7 +192,7 @@ public class IndexAndSearchServer {
                 + "ms");
             this.isRunning = true;
             
-            serverChannelFuture.channel().closeFuture().sync().channel();
+            serverChannelFuture.channel().closeFuture().sync(); //.channel();
             
         } finally {
             workerGroup.shutdownGracefully();

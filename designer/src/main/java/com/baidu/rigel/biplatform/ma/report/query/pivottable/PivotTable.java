@@ -94,6 +94,11 @@ public class PivotTable implements Serializable {
      * filterBlankRowCount 被过滤的空白行
      */
     private int filterBlankRowCount;
+
+    /**
+     * 此处内容非报表模型定义内容
+     */
+    private String others;
     
     /**
      * @return the colFields
@@ -232,5 +237,14 @@ public class PivotTable implements Serializable {
     public void setFilterBlankRowCount(int filterBlankRowCount) {
         this.filterBlankRowCount = filterBlankRowCount;
     }
+
+    public String getOthers() {
+        return others;
+    }
+
+    public void setOthers(String others) {
+        this.others = others;
+    }
+    
     
 }

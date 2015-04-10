@@ -46,6 +46,7 @@
 }
 .vu-table {
     height: 500px;
+    border-bottom: 1px solid #CFEBF6;
 }
 
 /**
@@ -56,11 +57,11 @@
     z-index: 999;
     padding: 5px 10px;
     color: #333;
-    background: #F9EDBE;
+    background: #FFF;
     font-family: "微软雅黑", Serif;
     font-size: 14px;
     font-weight: bold;
-    border: 1px solid #F0C36D;
+    border: 1px solid RGB(202, 203, 205);
     border-radius: 4px;
     -moz-border-radius: 4px;
     -webkit-border-radius: 4px;
@@ -106,10 +107,11 @@
     background-position: 0 -120px;
     background-repeat: no-repeat;
     overflow: hidden;
-    display: inline-block;
-    *display: inline;
-    *zoom: 1;
+    /*display: inline-block;*/
+    /**display: inline;*/
+    /**zoom: 1;*/
     vertical-align: middle;
+    display: none;
 }
 
 /**
@@ -134,6 +136,7 @@
 /* 皮肤对应的背景色,以及字体显示设置 */
 .ecui-loaded {
     background-color: #F0F4F7;
-    font-family: '微软雅黑', '宋体';
+    /*font-family: '微软雅黑', '宋体';*/
+    font-family: "Microsoft YaHei",Arial,sans-serif;
     font-size: 12px;
 }

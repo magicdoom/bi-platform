@@ -53,6 +53,7 @@ public class MiniCubeSqlConnectionTest {
      * @throws IOException
      */
     @Test
+    @Ignore
     public void testQuery() throws IOException {
 
         File f = new File("c:/qm.txt");
@@ -80,8 +81,8 @@ public class MiniCubeSqlConnectionTest {
         //
         List<Cube> cubes = new ArrayList<Cube>();
         cubes.add(question.getCube());
-        // MiniCubeConnection connection = MiniCubeDriverManager.getConnection(question.getDataSourceInfo());
-        // connection.publishCubes(cubes, question.getDataSourceInfo());
+         MiniCubeConnection connection = MiniCubeDriverManager.getConnection(question.getDataSourceInfo());
+         connection.publishCubes(cubes, question.getDataSourceInfo());
         //
         //
         //
@@ -100,15 +101,20 @@ public class MiniCubeSqlConnectionTest {
         //
         //
         //
-        String result = HttpRequest.sendPost("http://127.0.0.1:8080/query", params);
-        System.out.println(result);
-        ResponseResult responseResu = AnswerCoreConstant.GSON.fromJson(result, ResponseResult.class);
-        System.out.println(responseResu.getData());
-        System.out.println(responseResu.getData().replace("\\", ""));
-        String dataModelJson = responseResu.getData().replace("\\", "");
-        dataModelJson = dataModelJson.substring(1, dataModelJson.length() - 1);
-        System.out.println("++" + dataModelJson);
-        System.out.println(AnswerCoreConstant.GSON.fromJson(dataModelJson, DataModel.class));
+//        String result = HttpRequest.sendPost("http://127.0.0.1:8080/query", params);
+//        System.out.println(result);
+//        ResponseResult responseResu = AnswerCoreConstant.GSON.fromJson(result, ResponseResult.class);
+//        System.out.println(responseResu.getData());
+//        System.out.println(responseResu.getData().replace("\\", ""));
+//        String dataModelJson = responseResu.getData().replace("\\", "");
+//        dataModelJson = dataModelJson.substring(1, dataModelJson.length() - 1);
+//        System.out.println("++" + dataModelJson);
+        
+//        MiniCubeSqlConnection connection = (MiniCubeSqlConnection) MiniCubeDriverManager.getConnection(question.getDataSourceInfo());
+//        DataModel dm = connection.query(question);
+//        System.out.println(AnswerCoreConstant.GSON.toJson(dm));
+        
+        
     }
 
 }

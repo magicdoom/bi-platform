@@ -18,8 +18,6 @@ package com.baidu.rigel.biplatform.tesseract.resultset;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
-import org.apache.commons.lang.StringUtils;
-
 import com.baidu.rigel.biplatform.ac.model.Aggregator;
 
 /**
@@ -55,14 +53,14 @@ public class Aggregate {
     public static Serializable aggregate(Serializable src1, Serializable src2, Aggregator aggregator) {
         switch (aggregator.name()) {
             case AGGREGATE_SUM:
-                if(src2 == null || StringUtils.isBlank(src2.toString())) {
+                if(src2 == null) {
                     return src1; 
                 }
                 if(src1 == null) {
                     return src2;
                 }
-                BigDecimal arg1 = new BigDecimal(src1.toString());
-                BigDecimal arg2 = new BigDecimal(src2.toString());
+                BigDecimal arg1 = src1 instanceof BigDecimal ? (BigDecimal) src1 : new BigDecimal(src1.toString());
+                BigDecimal arg2 = src2 instanceof BigDecimal ? (BigDecimal) src2 : new BigDecimal(src2.toString());
                 return arg1.add(arg2);
             case AGGREGATE_COUNT:
                 if(src1 == null || src2 == null) {
@@ -75,10 +73,14 @@ public class Aggregate {
         }
     }
     
-    public static void main(String[] args) {
-        Number a = 100;
-        Number b = 100.00;
-        System.out.println(a.doubleValue() + b.doubleValue());
-    }
+//    public static void main(String[] args) {
+//        BigDecimal a = BigDecimal.valueOf (100);
+//        BigDecimal b = BigDecimal.valueOf (200);
+//        List<BigDecimal> lists = Lists.newArrayList ();
+//        lists.add (a);
+//        lists.add (b);
+//        lists.add (a);
+//        System.out.println(aggregate(a, b, Aggregator.SUM));
+//    }
 
 }

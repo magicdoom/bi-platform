@@ -443,7 +443,6 @@ public class FileServer extends ChannelHandlerAdapter {
      * 
      * @param ctx
      * @param req
-     * @param service2
      */
     private void doGetFileAttribuets(ChannelHandlerContext ctx, Request req) {
         Map<String, Object> params = req.getParams();
@@ -472,7 +471,6 @@ public class FileServer extends ChannelHandlerAdapter {
      * 
      * @param ctx
      * @param req
-     * @param service
      */
     private void doCopy(ChannelHandlerContext ctx, Request req) {
         Map<String, Object> params = req.getParams();

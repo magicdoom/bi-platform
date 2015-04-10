@@ -76,7 +76,7 @@ module.exports = function(grunt) {
                     sVTPLAll: "FALSE",
                     sCodeFlagBegin: "//==[DI=BEGIN]==[NIGEB=ID]==",
                     sCodeFlagEnd: "//==[DI=END]==[DNE=ID]==",
-                    srcEcharts: "report-ui/src/core/echarts/echarts-plain-original.js",
+//                    srcEcharts: "report-ui/src/core/echarts/echarts-plain-original.js",
                     srcEchartsMap: "report-ui/src/core/echarts/echarts-plain-map.js",
                     srcJquery: "report-ui/src/core/jquery/jquery-1.7.1.js",
                     srcRepoDict: "report-ui/src/biz-shared/di.config/repo-dict.js",

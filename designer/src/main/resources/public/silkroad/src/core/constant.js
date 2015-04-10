@@ -58,6 +58,7 @@ define(function () {
         CALENDAR: '-vu-form-calendar',
         TEXT: '-vu-form-text',
         MULTISELECT: '-vu-form-multiselect',
+        EUUI_INPUT_TREE: '-vu-form-ecui-input-tree',
         CHART: '-vu-chart',
         TABLE: '-vu-table',
         H_BUTTON: '-vu-confirm'

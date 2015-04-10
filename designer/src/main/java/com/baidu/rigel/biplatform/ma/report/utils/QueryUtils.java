@@ -27,8 +27,11 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.StringUtils;
 
+import com.baidu.rigel.biplatform.ac.minicube.CallbackMeasure;
 import com.baidu.rigel.biplatform.ac.minicube.ExtendMinicubeMeasure;
 import com.baidu.rigel.biplatform.ac.minicube.MiniCube;
 import com.baidu.rigel.biplatform.ac.minicube.MiniCubeDimension;
@@ -64,9 +67,11 @@ import com.baidu.rigel.biplatform.ma.model.consts.Constants;
 import com.baidu.rigel.biplatform.ma.model.ds.DataSourceDefine;
 import com.baidu.rigel.biplatform.ma.model.service.PositionType;
 import com.baidu.rigel.biplatform.ma.model.utils.DBUrlGeneratorUtils;
+import com.baidu.rigel.biplatform.ma.model.utils.HttpUrlUtils;
 import com.baidu.rigel.biplatform.ma.report.exception.QueryModelBuildException;
 import com.baidu.rigel.biplatform.ma.report.model.ExtendArea;
 import com.baidu.rigel.biplatform.ma.report.model.ExtendAreaType;
+import com.baidu.rigel.biplatform.ma.report.model.FormatModel;
 import com.baidu.rigel.biplatform.ma.report.model.Item;
 import com.baidu.rigel.biplatform.ma.report.model.LiteOlapExtendArea;
 import com.baidu.rigel.biplatform.ma.report.model.LogicModel;
@@ -76,6 +81,7 @@ import com.baidu.rigel.biplatform.ma.report.model.ReportParam;
 import com.baidu.rigel.biplatform.ma.report.query.QueryAction;
 import com.baidu.rigel.biplatform.ma.report.query.QueryAction.MeasureOrderDesc;
 import com.baidu.rigel.biplatform.ma.report.query.chart.DIReportChart;
+import com.baidu.rigel.biplatform.ma.report.query.chart.SeriesDataUnit;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -90,6 +96,7 @@ import com.google.common.collect.Sets;
  */
 public final class QueryUtils {
   
+    private static final Logger LOG = LoggerFactory.getLogger (QueryUtils.class);
     /**
      * 构造函数
      */
@@ -149,8 +156,36 @@ public final class QueryUtils {
         }
         // TODO 此处没有考虑指标、维度交叉情况，如后续有指标维度交叉情况，此处需要调整
         questionModel.getQueryConditionLimit().setWarningAtOverFlow(false);
+        if (queryAction.isNeedOthers()) {
+            // TODO 需要开发通用工具包 将常量定义到通用工具包中
+            questionModel.getRequestParams().put("NEED_OTHERS", "1");
+        }
+        putSliceConditionIntoParams (queryAction, questionModel);
         questionModel.setFilterBlank(queryAction.isFilterBlank());
         return questionModel;
+    }
+
+    /**
+     * 
+     * @param queryAction
+     * @param questionModel
+     */
+    private static void putSliceConditionIntoParams(QueryAction queryAction, QuestionModel questionModel) {
+        if (queryAction.getSlices () != null && !queryAction.getSlices ().isEmpty ()) {
+            for (Map.Entry<Item, Object> entry : queryAction.getSlices ().entrySet ()) {
+                String olapElementId = entry.getKey ().getOlapElementId ();
+                Object value = entry.getValue ();
+                if (value instanceof String[]) {
+                    StringBuilder rs = new StringBuilder();
+                    for (String str : (String[]) value) {
+                        rs.append (str + ",");
+                    }
+                    questionModel.getRequestParams().put(olapElementId, rs.toString ());
+                } else if (value != null){
+                    questionModel.getRequestParams().put(olapElementId, value.toString ());
+                }
+            }
+        }
     }
     
 //    /**
@@ -319,10 +354,11 @@ public final class QueryUtils {
                     condition.setQueryDataNodes(datas);
                 }
                 // 时间维度，并且在第一列位置，后续改成可配置方式
-                if (olapElement instanceof TimeDimension && firstIndex == 0 && !queryAction.isChartQuery()) {
+                if (item.getPositionType() == PositionType.X 
+                    && olapElement instanceof TimeDimension && firstIndex == 0 && !queryAction.isChartQuery()) {
                     condition.setMemberSortType(SortType.DESC);
+                    ++firstIndex;
                 }
-                ++firstIndex;
                 rs.put(condition.getMetaName(), condition);
             }
         }
@@ -496,7 +532,15 @@ public final class QueryUtils {
             for (String elementId : candInds.keySet()) {
                 OlapElement element = ReportDesignModelUtils.getDimOrIndDefineWithId(reportModel.getSchema(),
                         area.getCubeId(), elementId);
-                measures.put(element.getName(), (Measure) element);
+                if (element instanceof CallbackMeasure) {
+                	CallbackMeasure m = DeepcopyUtils.deepCopy((CallbackMeasure) element);
+                	String url = ((CallbackMeasure) element).getCallbackUrl();
+                	m.setCallbackUrl(HttpUrlUtils.getBaseUrl(url));
+                	m.setCallbackParams(HttpUrlUtils.getParams(url));
+                	measures.put(m.getName(), m);
+                } else {
+                	measures.put(element.getName(), (Measure) element);
+                }
             }
         }
         if (filterDims != null ) { // && filterDims.get(area.getCubeId()) != null) {
@@ -651,7 +695,8 @@ public final class QueryUtils {
     public static boolean isFilterArea(ExtendAreaType type) {
         return type == ExtendAreaType.TIME_COMP 
                 || type == ExtendAreaType.SELECT 
-                || type == ExtendAreaType.MULTISELECT;
+                || type == ExtendAreaType.MULTISELECT
+                || type == ExtendAreaType.SINGLE_DROP_DOWN_TREE;
     }
 
     /**
@@ -671,6 +716,7 @@ public final class QueryUtils {
             MiniCubeDimension tmp = (MiniCubeDimension) DeepcopyUtils.deepCopy(dim);
             LinkedHashMap<String, Level> tmpLevel = Maps.newLinkedHashMap();
             dim.getLevels().values().forEach(level -> {
+                level.setDimension (dim);
                 tmpLevel.put(level.getName(), level);
             });
             tmp.setLevels(tmpLevel);
@@ -684,9 +730,11 @@ public final class QueryUtils {
      * decorate chart with extend area
      * @param chart
      * @param area
+     * @param index 
      */
-    public static void decorateChart(DIReportChart chart, ExtendArea area, Schema schema) {
+    public static void decorateChart(DIReportChart chart, ExtendArea area, Schema schema, int index) {
         if (area.getType() == ExtendAreaType.CHART) {
+            assert area.getLogicModel () != null : "当前区域未设置逻辑模型";
             // 设置topN默认设置
             if (area.getLogicModel().getTopSetting() != null) {
                 MeasureTopSetting topSetting = area.getLogicModel().getTopSetting();
@@ -694,6 +742,28 @@ public final class QueryUtils {
                 chart.setTopedMeasureId(topSetting.getMeasureId());
                 chart.setTopType(topSetting.getTopType().name());
                 chart.setAreaId(area.getId());
+            }
+            FormatModel formatModel = area.getFormatModel ();
+            if (formatModel != null && formatModel.getDataFormat () != null) {
+                addDataFormatInfo(chart, formatModel.getDataFormat ());
+                Map<String, String> colorFormat = formatModel.getColorFormat ();
+                if (colorFormat != null && !colorFormat.isEmpty () && chart.getSeriesData () != null) {
+                    for (SeriesDataUnit data : chart.getSeriesData ()) {
+                        if (data == null) {
+                            continue;
+                        }
+                        data.setColorDefine (colorFormat.get (data.getyAxisName ()));
+                    }
+                }
+                Map<String, String> positions = formatModel.getPositions ();
+                if (colorFormat != null && !positions.isEmpty () && chart.getSeriesData () != null) {
+                    for (SeriesDataUnit data : chart.getSeriesData ()) {
+                        if (data == null) {
+                            continue;
+                        }
+                        data.setPosition (positions.get (data.getyAxisName ()));
+                    }
+                }
             }
             final Map<String, String> dimMap = Maps.newConcurrentMap();
             String[] allDims = area.getLogicModel().getSelectionDims().values().stream().map(item -> {
@@ -727,12 +797,30 @@ public final class QueryUtils {
             for (int i = 0; i < columns.length; ++i) {
                 chart.getMeasureMap().put(columns[i].getOlapElementId(), tmp.get(i));
             }
-            List<String>  defaultDims = getOlapElementNames(
-                    area.getLogicModel().getRows(), area.getCubeId(), schema);
-            if (defaultDims.size() > 0) {
-                chart.setDefaultDims(defaultDims.toArray(new String[0]));
-            }
+//            List<String>  defaultDims = getOlapElementNames(
+//                    area.getLogicModel().getRows(), area.getCubeId(), schema);
+            if (index >= 0 && index < chart.getAllMeasures().length) {
+            		chart.setDefaultMeasures(new String[]{ chart.getAllMeasures()[index] });
+            } 
+//            else {
+//	            	if (defaultDims.size() > 0) {
+//	            		chart.setDefaultDims(defaultDims.toArray(new String[0]));
+//	            	}
+//            }
         } 
+    }
+
+    private static void addDataFormatInfo(DIReportChart chart,
+            Map<String, String> dataFormat) {
+        if (chart.getSeriesData () == null || chart.getSeriesData ().isEmpty ()) {
+            return;
+        }
+        for (SeriesDataUnit seriesData : chart.getSeriesData ()) {
+            if (seriesData == null) {
+                continue;
+            }
+            seriesData.setFormat (dataFormat.get (seriesData.getyAxisName ()));
+        }
     }
 
     /**
@@ -782,8 +870,12 @@ public final class QueryUtils {
         if (params.size() == 0) {
             return rs;
         }
+        LOG.info ("context params ============== " + ContextManager.getParams ());
         Map<String, String> requestParams = collectRequestParams(params, request);
+        rs.putAll(requestParams);
+        LOG.info ("current request params ============== " + requestParams);
         params.forEach(param -> {
+            LOG.info ("current param define ============== " + param.toString());
             if (param.isNeeded() && StringUtils.isEmpty(requestParams.get(param.getName()))) {
                 if (StringUtils.isEmpty(param.getDefaultValue())) {
                     throw new RuntimeException("必要参数未赋值");
@@ -791,13 +883,13 @@ public final class QueryUtils {
                 rs.put(param.getElementId(), param.getDefaultValue());
                 rs.put(param.getName(), param.getDefaultValue());
             } else if (!StringUtils.isEmpty(requestParams.get(param.getName()))) {
-                rs.put(param.getElementId(), requestParams.get(param.getName()).split(","));
+                rs.put(param.getElementId(), requestParams.get(param.getName()));
             } else if (!StringUtils.isEmpty(param.getDefaultValue())) {
                 rs.put(param.getElementId(), param.getDefaultValue());
                 rs.put(param.getName(), param.getDefaultValue());
             }
         });
-        rs.putAll(requestParams);
+        LOG.info ("after reset params is : " + rs);
         return rs;
     }
 

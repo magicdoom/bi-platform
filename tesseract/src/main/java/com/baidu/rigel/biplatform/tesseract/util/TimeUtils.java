@@ -346,8 +346,9 @@ public class TimeUtils {
         }
         String timeStr = TimeRangeDetail.toTime(day);
         Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.YEAR, Integer.parseInt(timeStr.substring(0, 4)));
-        calendar.set(Calendar.MONTH, Integer.parseInt(timeStr.substring(4, 6)) - 1);
+        calendar.setTime (day);
+//        calendar.set(Calendar.YEAR, Integer.parseInt(timeStr.substring(0, 4)));
+//        calendar.set(Calendar.MONTH, Integer.parseInt(timeStr.substring(4, 6)));
         int maxDay = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
         return timeStr.substring(0, 6) + String.valueOf(maxDay);
     }

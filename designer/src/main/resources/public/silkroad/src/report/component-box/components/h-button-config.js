@@ -44,8 +44,8 @@ define(
             type: 'H_BUTTON',
             iconClass: 'h-button',
             caption: '查询',
-            defaultWidth: 80,
-            defaultHeight: 57,
+            defaultWidth: 67,
+            defaultHeight: 33,
             vm: {
                 render: function (data) {
                     return SelectVmTemplate.render({

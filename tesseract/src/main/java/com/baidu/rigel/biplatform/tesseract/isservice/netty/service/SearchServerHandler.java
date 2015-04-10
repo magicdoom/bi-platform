@@ -23,7 +23,6 @@ import io.netty.channel.ChannelHandlerContext;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
@@ -37,7 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import com.baidu.rigel.biplatform.ac.util.Md5Util;
 import com.baidu.rigel.biplatform.tesseract.isservice.search.agg.AggregateCompute;
-import com.baidu.rigel.biplatform.tesseract.isservice.search.collector.TesseractResultRecordCollector;
+import com.baidu.rigel.biplatform.tesseract.isservice.search.collector.TesseractResultSetCollector;
 import com.baidu.rigel.biplatform.tesseract.isservice.search.service.IndexSearcherFactory;
 import com.baidu.rigel.biplatform.tesseract.netty.AbstractChannelInboundHandler;
 import com.baidu.rigel.biplatform.tesseract.netty.message.AbstractMessage;
@@ -47,9 +46,8 @@ import com.baidu.rigel.biplatform.tesseract.netty.message.isservice.SearchReques
 import com.baidu.rigel.biplatform.tesseract.netty.message.isservice.SearchResultMessage;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryMeasure;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryRequest;
-import com.baidu.rigel.biplatform.tesseract.resultset.TesseractResultSet;
-import com.baidu.rigel.biplatform.tesseract.resultset.isservice.ResultRecord;
-import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchResultSet;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchIndexResultRecord;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchIndexResultSet;
 import com.baidu.rigel.biplatform.tesseract.util.QueryRequestUtil;
 
 /**
@@ -102,9 +100,6 @@ public class SearchServerHandler extends AbstractChannelInboundHandler {
         SearchRequestMessage searchReqeustMessage = (SearchRequestMessage) msg;
         
         String idxPath = searchReqeustMessage.getIdxPath();
-        SearcherManager searcherManager = IndexSearcherFactory.getInstance().getSearcherManager(idxPath,true);
-        IndexSearcher is = null;
-        is = searcherManager.acquire();
         
         QueryRequest queryRequest = (QueryRequest) searchReqeustMessage.getMessageBody();
         Query queryAll = QueryRequestUtil.transQueryRequest2LuceneQuery(queryRequest);
@@ -122,20 +117,29 @@ public class SearchServerHandler extends AbstractChannelInboundHandler {
         }
         
         
-        TesseractResultSet searchResult = null;
-        LinkedList<ResultRecord> resultRecordList = new LinkedList<ResultRecord>();
+        SearchIndexResultSet searchResult = null;
+        IndexSearcher is = null;
         long current = System.currentTimeMillis();
+        SearcherManager searcherManager = IndexSearcherFactory.getInstance().getSearcherManager(idxPath,true);
         try {
+            is = searcherManager.acquire();
             QueryWrapperFilter filter = new QueryWrapperFilter(queryAll);
+            
+            logger.info("cost " + (System.currentTimeMillis() - current) + " in trans QUERY --> filter:");
+            
+            long gcurrent = System.currentTimeMillis();
             Set<String> groupBy = new HashSet<>();
             if (queryRequest.getGroupBy() != null) {
                 groupBy = queryRequest.getGroupBy().getGroups();
             }
-            TesseractResultRecordCollector collector = new TesseractResultRecordCollector(
-                dimFieldList.toArray(new String[0]), measureFieldList.toArray(new String[0]), groupBy);
             
+            TesseractResultSetCollector collector = new TesseractResultSetCollector(dimFieldList.toArray(new String[0]), measureFieldList.toArray(new String[0]));
+//            TesseractResultRecordCollector collector = new TesseractResultRecordCollector(
+//                dimFieldList.toArray(new String[0]), measureFieldList.toArray(new String[0]), groupBy);
             
+            logger.info("cost " + (System.currentTimeMillis() - gcurrent) + " in init TesseractResultRecordCollector ");
             is.search(new MatchAllDocsQuery(), filter, collector);
+            searchResult = collector.buildResultSet(groupBy);
 //            for (int docId : collector.getResultDocIdList()) {
 //                Document doc = is.getIndexReader().document(docId);
 //                ResultRecord record = new ResultRecord(doc);
@@ -148,9 +152,8 @@ public class SearchServerHandler extends AbstractChannelInboundHandler {
 //                
 //            }
             logger.info("cost " + (System.currentTimeMillis() - current) + " in search,result:"
-                    + collector.getResult().size());
+                    + searchResult.size());
             current = System.currentTimeMillis();
-            resultRecordList.addAll(collector.getResult());
         } finally {
             searcherManager.release(is);
         }
@@ -159,11 +162,11 @@ public class SearchServerHandler extends AbstractChannelInboundHandler {
         // group by
         if (queryRequest.getGroupBy() != null) {
             int dimSize = queryRequest.getSelect().getQueryProperties().size();
-            searchResult =
-                    new SearchResultSet(AggregateCompute.aggregate(resultRecordList, dimSize, queryRequest.getSelect()
-                            .getQueryMeasures()));
-        } else {
-            searchResult = new SearchResultSet(resultRecordList);
+            
+            
+            List<SearchIndexResultRecord> datas = AggregateCompute.aggregate(searchResult.getDataList(), dimSize, queryRequest.getSelect()
+                    .getQueryMeasures());
+            searchResult.setDataList(datas);
         }
         
         logger.info("cost " + (System.currentTimeMillis() - current) 

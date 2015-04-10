@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.List;
 import java.util.Queue;
 
 import com.baidu.rigel.biplatform.tesseract.resultset.TesseractResultSet;
@@ -33,7 +34,7 @@ import com.baidu.rigel.biplatform.tesseract.util.String2DateUtils;
  * @author lijin
  *
  */
-public class SearchResultSet implements TesseractResultSet {
+public class SearchResultSet implements TesseractResultSet<ResultRecord> {
 
     /**
      * serialVersionUID
@@ -338,6 +339,11 @@ public class SearchResultSet implements TesseractResultSet {
     @Override
     public ResultRecord getCurrentRecord() {
         return this.currRecord;
+    }
+
+    @Override
+    public List<ResultRecord> getDataList() {
+        return null;
     }
     
     

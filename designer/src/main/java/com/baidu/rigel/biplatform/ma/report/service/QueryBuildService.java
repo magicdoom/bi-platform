@@ -17,6 +17,7 @@ package com.baidu.rigel.biplatform.ma.report.service;
 
 import java.util.Map;
 
+import com.baidu.rigel.biplatform.ac.model.Cube;
 import com.baidu.rigel.biplatform.ac.query.data.DataModel;
 import com.baidu.rigel.biplatform.ma.report.exception.PivotTableParseException;
 import com.baidu.rigel.biplatform.ma.report.exception.QueryModelBuildException;
@@ -67,7 +68,7 @@ public interface QueryBuildService {
      * @return
      * @throws Exception
      */
-    PivotTable parseToPivotTable(DataModel dataModel) throws PivotTableParseException;
+    PivotTable parseToPivotTable(Cube cube, DataModel dataModel) throws PivotTableParseException;
 
     /**
      * @param model

@@ -47,6 +47,7 @@ import com.baidu.rigel.biplatform.ac.util.DeepcopyUtils;
 import com.baidu.rigel.biplatform.ma.auth.bo.CalMeasureViewBo;
 import com.baidu.rigel.biplatform.ma.model.consts.Constants;
 import com.baidu.rigel.biplatform.ma.model.service.SchemaManageService;
+import com.baidu.rigel.biplatform.ma.model.utils.HttpUrlUtils;
 import com.baidu.rigel.biplatform.ma.model.utils.UuidGeneratorUtils;
 
 /**
@@ -620,12 +621,16 @@ public class SchemaManageServiceImpl implements SchemaManageService {
                 m.setId(UuidGeneratorUtils.generate());
             }
             if (m != null) {
-                m.setCallbackUrl(measureBo.getUrl());
+//                m.setCallbackUrl(measureBo.getUrl());
+            	// 回调指标参数问题
+                m.setCallbackUrl(HttpUrlUtils.getBaseUrl(measureBo.getUrl()));
+                m.setCallbackParams(HttpUrlUtils.getParams(measureBo.getUrl()));
                 m.setName(measureBo.getName());
+                m.setDefine(measureBo.getName());
                 m.setCaption(measureBo.getCaption());
                 String timeOut = measureBo.getProperties().get(Constants.SOCKET_TIME_OUT_KEY);
                 if (StringUtils.isEmpty(timeOut)) {
-                    timeOut = "30000";
+                    timeOut = "3000";
                 }
                 m.setType(MeasureType.CALLBACK);
                 m.setAggregator(Aggregator.CALCULATED);

@@ -98,5 +98,16 @@ public interface ReportModelQueryService {
     public ResultSet queryDatas(ReportDesignModel model, QueryAction action, boolean usingCache, boolean needSumary, 
             Map<String, Object> requestParams, String securityKey)
             throws DataSourceOperationException, QueryModelBuildException, MiniCubeQueryException;
+
+    /**
+     * 根据uniqueName查询叶子节点members
+     * @param tmpCube
+     * @param currentUniqueName
+     * @param params
+     * @param securityKey
+     * @return List<Member>
+     */
+    public List<Member> getMembers(Cube tmpCube, String currentUniqueName,
+            Map<String, String> params, String securityKey);
     
 }

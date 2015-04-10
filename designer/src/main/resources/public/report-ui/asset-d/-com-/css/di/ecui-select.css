@@ -19,6 +19,10 @@
     border-top: 1px solid #F0F0F0;
     cursor: default;
     font-size: 12px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 .ui-select-button {
     background: url(img/icon2.png) -16px -64px no-repeat;
@@ -74,6 +78,10 @@
     line-height: 18px;
     border-top: 1px solid #F0F0F0;
     cursor: default;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 .ui-multi-select-button {
     background: url(img/icon2.png) -16px -64px no-repeat;
@@ -128,4 +136,9 @@
 .ui-multi-select-item-hover,
 .ui-multi-select-item-focus {
     background: #E4EAFA;
+}
+
+.ui-multi-select-selectall {
+    background: white;
+    z-index: 99
 }

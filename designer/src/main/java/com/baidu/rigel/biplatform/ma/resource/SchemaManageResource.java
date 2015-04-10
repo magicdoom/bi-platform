@@ -50,6 +50,7 @@ import com.baidu.rigel.biplatform.ma.auth.bo.CalMeasureViewBo;
 import com.baidu.rigel.biplatform.ma.model.consts.Constants;
 import com.baidu.rigel.biplatform.ma.model.service.SchemaManageService;
 import com.baidu.rigel.biplatform.ma.model.utils.GsonUtils;
+import com.baidu.rigel.biplatform.ma.model.utils.HttpUrlUtils;
 import com.baidu.rigel.biplatform.ma.report.exception.CacheOperationException;
 import com.baidu.rigel.biplatform.ma.report.model.ExtendArea;
 import com.baidu.rigel.biplatform.ma.report.model.ReportDesignModel;
@@ -182,7 +183,9 @@ public class SchemaManageResource {
             }
             if (measure instanceof CallbackMeasure) {
                 CallbackMeasure m = (CallbackMeasure) measure;
-                measureObj.setUrl(m.getCallbackUrl());
+                Map<String, String> params = m.getCallbackParams() == null ? 
+                		HttpUrlUtils.getParams(m.getCallbackUrl()) : m.getCallbackParams();
+                measureObj.setUrl(HttpUrlUtils.generateTotalUrl(m.getCallbackUrl(), params));
                 Map<String, String> prop = Maps.newHashMap();
                 prop.put(Constants.SOCKET_TIME_OUT_KEY, String.valueOf(m.getSocketTimeOut()));
                 measureObj.setProperties(prop);

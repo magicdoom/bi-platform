@@ -12,8 +12,7 @@ define([
         'report/edit/dim-template',
         'report/edit/drag-ind-dim/main-view',
         'report/edit/ue-view',
-        'report/global-setting-btns/btns-view',
-        'report/global-menu-btns/main-view'
+        'report/global-setting-btns/btns-view'
     ],
     function (
         template,
@@ -24,18 +23,13 @@ define([
         dimTemplate,
         DragView,
         UEView,
-        BtnsView,
-        MainView
+        BtnsView
         ) {
         return Backbone.View.extend({
             // view事件绑定
             events: {
                 'change .j-cube-select': 'changeCube',
-                'click .j-global-para': 'setglobalbtn',
-                'click .j-global-component': 'shiftMenu',
-                'click .j-button-skin': 'shiftMenu',
-                'click .j-skin-btn': 'chanceTheme'
-//                'click .j-button-line': 'referenceLine'
+                'click .j-global-para': 'setglobalbtn'
             },
 
             /**
@@ -52,7 +46,6 @@ define([
                 });
                 this.model.loadCubeList();
                 this.btnsView = new BtnsView();
-                this.mainView = new MainView();
                 this.initListening();
             },
 
@@ -160,10 +153,6 @@ define([
                         parentView: that
                     });
                 });
-                // 工具条按钮区域按钮添加
-                this.$el.find('.j-global-btn').html((new BtnsView).createBtns());
-                // 工具条菜单区域菜单添加
-                this.$el.find('.j-global-menu').html((new MainView).componentMenu());
                 // FIXME:临时使用，重构时，逻辑干掉
                 $(document).mousedown(function (e) {
                     // 如果触发元素，不属于组件添加按钮区域
@@ -202,33 +191,6 @@ define([
                 $(this.el).unbind().empty();
                 this.canvas.destroy();
                 $('.j-foot').show();
-            },
-
-            /**
-             * 功能区域切换菜单
-             *
-             * @public
-             */
-            shiftMenu : function (event) {
-                this.mainView.shiftMenu(event);
-            },
-
-            /**
-             * 切换皮肤
-             *
-             * @public
-             */
-            chanceTheme : function (event) {
-                this.mainView.chanceTheme(event);
-            },
-
-            /**
-             * 切换皮肤
-             *
-             * @public
-             */
-            referenceLine : function (event) {
-                this.mainView.referenceLine(event);
             }
         });
     }

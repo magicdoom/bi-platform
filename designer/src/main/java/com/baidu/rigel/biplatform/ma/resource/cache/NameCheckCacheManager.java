@@ -34,10 +34,10 @@ public class NameCheckCacheManager {
 //     * logger
 //     */
 //    private Logger logger = LoggerFactory.getLogger(NameCheckCacheManager.class);
-    /**
-     * REPORT_NAME_SIGN
-     */
-    private static final String REPORT_NAME_SIGN = "REPORT_NAME_";
+//    /**
+//     * REPORT_NAME_SIGN
+//     */
+//    private static final String REPORT_NAME_SIGN = "REPORT_NAME_";
     
     /**
      * cacheManagerForReource
@@ -53,30 +53,30 @@ public class NameCheckCacheManager {
      * @param reportName
      * @return
      */
-    public boolean existsReportName(String reportName) {
-        String productLine = ContextManager.getProductLine();
-        String key = CacheKeyGenerator.generateJointedKey(REPORT_NAME_SIGN, productLine, reportName);
-        Object sign = cacheManagerForReource.getFromCache(key);
-        if (sign == null) {
-            return false;
-        }
-        return true;
-    }
+//    public boolean existsReportName(String reportName) {
+//        String productLine = ContextManager.getProductLine();
+//        String key = CacheKeyGenerator.generateJointedKey(REPORT_NAME_SIGN, productLine, reportName);
+//        Object sign = cacheManagerForReource.getFromCache(key);
+//        if (sign == null) {
+//            return false;
+//        }
+//        return true;
+//    }
     
     
-    /**
-     * 添加使用的报表名称到缓存
-     * @param reportName
-     */
-    public void useReportName(String reportName) {
-        String productLine = ContextManager.getProductLine();
-        String key = CacheKeyGenerator.generateJointedKey(REPORT_NAME_SIGN, productLine, reportName);
-        try {
-            cacheManagerForReource.setToCache(key, 1);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+//    /**
+//     * 添加使用的报表名称到缓存
+//     * @param reportName
+//     */
+//    public void useReportName(String reportName) {
+//        String productLine = ContextManager.getProductLine();
+//        String key = CacheKeyGenerator.generateJointedKey(REPORT_NAME_SIGN, productLine, reportName);
+//        try {
+//            cacheManagerForReource.setToCache(key, 1);
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+//    }
     
     /**
      * 检测当前id是否正在使用

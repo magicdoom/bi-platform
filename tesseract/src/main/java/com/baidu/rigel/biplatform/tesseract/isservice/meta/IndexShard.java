@@ -101,7 +101,7 @@ public class IndexShard implements Serializable {
     /**
      * 索引状态
      */
-    private IndexState idxState = IndexState.INDEX_UNAVAILABLE;
+    private IndexState idxState = IndexState.INDEX_UNINIT;
     
     /**
      * 构造函数

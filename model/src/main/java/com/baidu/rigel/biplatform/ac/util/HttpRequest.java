@@ -35,7 +35,6 @@ import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
 import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -49,13 +48,7 @@ import org.apache.http.cookie.CookieSpec;
 import org.apache.http.cookie.CookieSpecProvider;
 import org.apache.http.cookie.MalformedCookieException;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.cookie.BestMatchSpecFactory;
 import org.apache.http.impl.cookie.BrowserCompatSpec;
-import org.apache.http.impl.cookie.BrowserCompatSpecFactory;
-import org.apache.http.impl.cookie.IgnoreSpecFactory;
-import org.apache.http.impl.cookie.NetscapeDraftSpecFactory;
-import org.apache.http.impl.cookie.RFC2109SpecFactory;
-import org.apache.http.impl.cookie.RFC2965SpecFactory;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HttpContext;
@@ -96,64 +89,119 @@ public class HttpRequest {
      */
     private static Logger LOGGER = LoggerFactory.getLogger(HttpRequest.class);
 
+    private static HttpClient client;
+    /**
+     * 获取一个默认的HttpClient，默认的是指了默认返回结果的head为application/json
+     * 
+     * @return 默认的HttpClient
+     */
+//    public static HttpClient getDefaultHttpClient(Map<String, String> params) {
+//        if (client == null) {
+//            Header header = new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json;");
+//            List<Header> headers = new ArrayList<Header>(1);
+//            headers.add(header);
+//            
+//            CookieSpecProvider cookieSpecProvider = new CookieSpecProvider() {
+//
+//                @Override
+//                public CookieSpec create(HttpContext context) {
+//                    return new BrowserCompatSpec() {
+//                        
+//                        @Override
+//                        public void validate(Cookie cookie, CookieOrigin origin) throws MalformedCookieException{
+//                            //no check cookie
+//                        }
+//                    };
+//                }
+//            };
+//            
+//            Lookup<CookieSpecProvider> cookieSpecRegistry = RegistryBuilder.<CookieSpecProvider>create()
+////                    .register(CookieSpecs.BEST_MATCH, new BestMatchSpecFactory())
+////                    .register(CookieSpecs.STANDARD, new RFC2965SpecFactory())
+////                    .register(CookieSpecs.BROWSER_COMPATIBILITY, new BrowserCompatSpecFactory())
+////                    .register(CookieSpecs.NETSCAPE, new NetscapeDraftSpecFactory())
+////                    .register(CookieSpecs.IGNORE_COOKIES, new IgnoreSpecFactory())
+////                    .register("rfc2109", new RFC2109SpecFactory())
+////                    .register("rfc2965", new RFC2965SpecFactory())
+//                    .register(NO_CHECK_COOKIES, cookieSpecProvider)
+//                    .build();
+//            String socketTimeout = "50000";
+//            String connTimeout = "1000";
+//            if (params != null) {
+//                if (params.containsKey(SOCKET_TIME_OUT)) {
+//                    socketTimeout = params.get(SOCKET_TIME_OUT);
+//                }
+//                if (params.containsKey(CONNECTION_TIME_OUT)) {
+//                    socketTimeout = params.get(CONNECTION_TIME_OUT);
+//                }
+//            }
+//            // 设置默认的cookie的安全策略为不校验
+//            RequestConfig requestConfigBuilder = RequestConfig.custom()
+//                    .setCookieSpec(NO_CHECK_COOKIES)
+//                    .setSocketTimeout(Integer.valueOf(socketTimeout)) // ms ???
+//                    .setConnectTimeout(Integer.valueOf(connTimeout)) // ms???
+//                    .build();
+//            client = HttpClients.custom()
+//                    .setDefaultCookieSpecRegistry(cookieSpecRegistry)
+//                    .setDefaultRequestConfig(requestConfigBuilder)
+//                    .setDefaultHeaders(headers)
+//                    .build();
+//        }
+//        
+//        return client;
+//    }
+
     /**
      * 获取一个默认的HttpClient，默认的是指了默认返回结果的head为application/json
      * 
      * @return 默认的HttpClient
      */
     public static HttpClient getDefaultHttpClient(Map<String, String> params) {
-        Header header = new BasicHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-        List<Header> headers = new ArrayList<Header>(1);
-        headers.add(header);
         
-        CookieSpecProvider cookieSpecProvider = new CookieSpecProvider() {
+        if (client == null) {
+            CookieSpecProvider cookieSpecProvider = new CookieSpecProvider() {
 
-            @Override
-            public CookieSpec create(HttpContext context) {
-                return new BrowserCompatSpec() {
-                    
-                    @Override
-                    public void validate(Cookie cookie, CookieOrigin origin) throws MalformedCookieException{
-                        //no check cookie
-                    }
-                };
+                @Override
+                public CookieSpec create(HttpContext context) {
+                    return new BrowserCompatSpec() {
+                        
+                        @Override
+                        public void validate(Cookie cookie, CookieOrigin origin) throws MalformedCookieException{
+                            //no check cookie
+                        }
+                    };
+                }
+            };
+            
+            Lookup<CookieSpecProvider> cookieSpecRegistry = RegistryBuilder.<CookieSpecProvider>create()
+                    .register(NO_CHECK_COOKIES, cookieSpecProvider)
+                    .build();
+            String socketTimeout = "50000";
+            String connTimeout = "1000";
+            if (params != null) {
+                if (params.containsKey(SOCKET_TIME_OUT)) {
+                    socketTimeout = params.get(SOCKET_TIME_OUT);
+                }
+                if (params.containsKey(CONNECTION_TIME_OUT)) {
+                    socketTimeout = params.get(CONNECTION_TIME_OUT);
+                }
             }
-        };
-        
-        Lookup<CookieSpecProvider> cookieSpecRegistry = RegistryBuilder.<CookieSpecProvider>create()
-                .register(CookieSpecs.BEST_MATCH, new BestMatchSpecFactory())
-                .register(CookieSpecs.STANDARD, new RFC2965SpecFactory())
-                .register(CookieSpecs.BROWSER_COMPATIBILITY, new BrowserCompatSpecFactory())
-                .register(CookieSpecs.NETSCAPE, new NetscapeDraftSpecFactory())
-                .register(CookieSpecs.IGNORE_COOKIES, new IgnoreSpecFactory())
-                .register("rfc2109", new RFC2109SpecFactory())
-                .register("rfc2965", new RFC2965SpecFactory())
-                .register(NO_CHECK_COOKIES, cookieSpecProvider)
-                .build();
-        String socketTimeout = "50000";
-        String connTimeout = "1000";
-        if (params != null) {
-            if (params.containsKey(SOCKET_TIME_OUT)) {
-                socketTimeout = params.get(SOCKET_TIME_OUT);
-            }
-            if (params.containsKey(CONNECTION_TIME_OUT)) {
-                socketTimeout = params.get(CONNECTION_TIME_OUT);
-            }
+            // 设置默认的cookie的安全策略为不校验
+            RequestConfig requestConfigBuilder = RequestConfig.custom()
+                    .setCookieSpec(NO_CHECK_COOKIES)
+                    .setSocketTimeout(Integer.valueOf(socketTimeout)) // ms ???
+                    .setConnectTimeout(Integer.valueOf(connTimeout)) // ms???
+                    .build();
+            client = HttpClients.custom()
+                    .setDefaultCookieSpecRegistry(cookieSpecRegistry)
+                    .setDefaultRequestConfig(requestConfigBuilder)
+                    .build();
         }
-        // 设置默认的cookie的安全策略为不校验
-        RequestConfig requestConfigBuilder = RequestConfig.custom()
-                .setCookieSpec(NO_CHECK_COOKIES)
-                .setSocketTimeout(Integer.valueOf(socketTimeout)) // ms ???
-                .setConnectTimeout(Integer.valueOf(connTimeout)) // ms???
-                .build();
-        HttpClient client = HttpClients.custom()
-                .setDefaultCookieSpecRegistry(cookieSpecRegistry)
-                .setDefaultRequestConfig(requestConfigBuilder)
-                .setDefaultHeaders(headers)
-                .build();
+        
+        
         return client;
     }
-
+    
     /**
      * 将url中的占位符用传过来的参数进行替换 需要预先解析好占位符信息，把参数封装好。推荐在传到工具类前处理好占位符。
      * 
@@ -225,6 +273,7 @@ public class HttpRequest {
             String requestUrl = prefix + address + suffix;
             try {
                 HttpUriRequest request = RequestBuilder.get().setUri(requestUrl).build();
+                
                 if (StringUtils.isNotBlank(cookie)) {
                     // 需要将cookie添加进去
                     request.addHeader(new BasicHeader(COOKIE_PARAM_NAME, cookie));
@@ -324,6 +373,17 @@ public class HttpRequest {
 
     }
 
+//    @SuppressWarnings("deprecation")
+//    private static void closeConn(HttpClient client) {
+//        if (client != null) {
+//            try {
+//                client.getConnectionManager ().shutdown ();
+//            } catch (Exception e) {
+//                LOGGER.warn(e.getMessage (), e);
+//            }
+//        }
+//    }
+
     /**
      * 向指定URL发送POST方法的请求
      * 
@@ -332,6 +392,17 @@ public class HttpRequest {
      * @return URL 所代表远程资源的响应结果
      */
     public static String sendPost(String url, Map<String, String> params) {
+        return sendPost(getDefaultHttpClient(Collections.unmodifiableMap(params)), url, params);
+    }
+    
+    /**
+     * 向指定URL发送POST方法的请求
+     * 
+     * @param url 发送请求的URL
+     * @param param 请求参数，请求参数应该是 name1=value1&name2=value2 的形式。
+     * @return URL 所代表远程资源的响应结果
+     */
+    public static String sendPost1(String url, Map<String, String> params) {
         return sendPost(getDefaultHttpClient(Collections.unmodifiableMap(params)), url, params);
     }
 
@@ -426,10 +497,7 @@ public class HttpRequest {
 //         Map<String,String> params = new HashMap<String, String>();
 //         params.put("dataSourceInfoStr", AnswerCoreConstant.GSON.toJson(sqlDataSourceInfo));
 //         params.put("cubeXml", "cubeXML");
-//         params.put("Cookie", "cookies");
-//        
-//         String result = sendPost("http://localhost:8080/meta/publishInfo",params);
-//         System.out.println(result);
+//         params.put("test", "cookies");
 //     }
 
 }

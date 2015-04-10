@@ -36,8 +36,6 @@ import com.baidu.rigel.biplatform.ac.query.data.DataSourceInfo;
 import com.baidu.rigel.biplatform.ac.query.model.ConfigQuestionModel;
 import com.baidu.rigel.biplatform.ac.query.model.PageInfo;
 import com.baidu.rigel.biplatform.ac.query.model.QuestionModel;
-import com.baidu.rigel.biplatform.ac.query.model.SortRecord;
-import com.baidu.rigel.biplatform.ac.util.DataModelUtils;
 import com.baidu.rigel.biplatform.ac.util.MetaNameUtil;
 import com.baidu.rigel.biplatform.tesseract.dataquery.udf.condition.CallbackCondition;
 import com.baidu.rigel.biplatform.tesseract.datasource.DataSourcePoolService;
@@ -57,7 +55,7 @@ import com.baidu.rigel.biplatform.tesseract.qsservice.query.QueryService;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryContext;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryContextSplitResult;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryRequest;
-import com.baidu.rigel.biplatform.tesseract.resultset.TesseractResultSet;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchIndexResultSet;
 import com.baidu.rigel.biplatform.tesseract.util.DataModelBuilder;
 import com.baidu.rigel.biplatform.tesseract.util.QueryRequestUtil;
 import com.baidu.rigel.biplatform.tesseract.util.TesseractExceptionUtils;
@@ -166,8 +164,10 @@ public class QueryServiceImpl implements QueryService {
                         DataModel dm = null;
                         if (con instanceof CallbackCondition) {
                             try {
-                                TesseractResultSet resultSet = callbackSearchService.query(context, QueryRequestBuilder.buildQueryRequest(dsInfo, finalCube, context, questionModel.isUseIndex(),null));
-                                dm = new DataModelBuilder(resultSet, context).build();
+                                SearchIndexResultSet resultSet = callbackSearchService
+                                        .query(context, QueryRequestBuilder.buildQueryRequest(dsInfo, finalCube, 
+                                        context, questionModel.isUseIndex(),null));
+                                dm = new DataModelBuilder(resultSet, context).build(true);
                             } catch (Exception e) {
                                 logger.error("catch error when process callback measure {}",e.getMessage());
                                 throw new RuntimeException(e);
@@ -181,14 +181,7 @@ public class QueryServiceImpl implements QueryService {
             
             result = queryContextSplitService.mergeDataModel(splitResult);
         } else {
-            
             result = executeQuery(dataSourceInfo, cube, queryContext,questionModel.isUseIndex(), questionModel.getPageInfo());
-        }
-        if (result != null) {
-            result = sortAndTrunc(result, questionModel.getSortRecord());
-            if (questionModel.isFilterBlank()) {
-                DataModelUtils.filterBlankRow(result);
-            }
         }
         return result;
 
@@ -203,13 +196,13 @@ public class QueryServiceImpl implements QueryService {
         if (statDimensionNode(queryContext.getRowMemberTrees(), false, false) == 0
                 || (statDimensionNode(queryContext.getColumnMemberTrees(), false, false) == 0 && CollectionUtils
                         .isEmpty(queryContext.getQueryMeasures()))) {
-            return new DataModelBuilder(null, queryContext).build();
+            return new DataModelBuilder(null, queryContext).build(false);
         }
         logger.info("cost :" + (System.currentTimeMillis() - current) + " to build query request.");
         current = System.currentTimeMillis();
         DataModel result = null;
         try {
-            TesseractResultSet resultSet = searchService.query(queryRequest);
+            SearchIndexResultSet resultSet = searchService.query(queryRequest);
             
             if (queryRequest.getGroupBy() != null && CollectionUtils.isNotEmpty(queryRequest.getGroupBy().getGroups())) {
                 try {
@@ -225,7 +218,7 @@ public class QueryServiceImpl implements QueryService {
 
             }
             
-            result = new DataModelBuilder(resultSet, queryContext).build();
+            result = new DataModelBuilder(resultSet, queryContext).build(false);
         } catch (IndexAndSearchException e) {
             logger.error("query occur when search queryRequest：" + queryContext, e);
             throw new MiniCubeQueryException(e);
@@ -234,19 +227,7 @@ public class QueryServiceImpl implements QueryService {
         return result;
     }
 
-    /**
-     * 排序并截断结果集，默认显示500条纪录
-     * @param result
-     * @param sortRecord
-     * @return DataModel
-     */
-    private DataModel sortAndTrunc(DataModel result, SortRecord sortRecord) {
-            if (sortRecord != null) {
-                DataModelUtils.sortDataModelBySort(result, sortRecord);
-            }
-            int recordSize = sortRecord == null ? 500 : sortRecord.getRecordSize();
-        return DataModelUtils.truncModel(result, recordSize); 
-    }
+    
 
     private int stateQueryContextConditionCount(QueryContext context, boolean needSummary) {
         if (context == null) {
@@ -286,7 +267,9 @@ public class QueryServiceImpl implements QueryService {
                         // 暂时只支持在行上汇总，列上汇总有点怪怪的。。需要再开启
                         if (isRow && needSummary) {
                             nodeTree.setName(MiniCubeMember.SUMMARY_NODE_NAME);
+                            nodeTree.setUniqueName(MiniCubeMember.SUMMARY_NODE_NAME);
                             nodeTree.setCaption(MiniCubeMember.SUMMARY_NODE_CAPTION);
+                            nodeTree.setSummary(true);
                             nodeTree.setQuerySource(child.getQuerySource());
                             nodeTree.getLeafIds().addAll(child.getLeafIds());
                         }

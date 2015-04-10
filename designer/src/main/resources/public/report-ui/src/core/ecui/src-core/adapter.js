@@ -258,7 +258,9 @@
         first = dom.first = function (el) {
             return matchNode(el.firstChild, 'nextSibling');
         },
-
+        previous = dom.previous = function (el) {
+            return matchNode(el.previousSibling, 'previousSibling');
+        },
         /**
          * 获取 Element 对象的属性值。
          * 在 IE 下，Element 对象的属性可以通过名称直接访问，效率是 getAttribute 方式的两倍。

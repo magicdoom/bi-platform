@@ -22,7 +22,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Pattern;
 import java.util.Set;
 
 import javax.annotation.Resource;
@@ -50,7 +49,6 @@ import com.baidu.rigel.biplatform.ac.util.PlaceHolderUtils;
 import com.baidu.rigel.biplatform.parser.CompileExpression;
 import com.baidu.rigel.biplatform.parser.context.CompileContext;
 import com.baidu.rigel.biplatform.parser.context.Condition;
-import com.baidu.rigel.biplatform.parser.context.Condition.ConditionType;
 import com.baidu.rigel.biplatform.parser.context.EmptyCondition;
 import com.baidu.rigel.biplatform.parser.result.ComputeResult;
 import com.baidu.rigel.biplatform.parser.result.ListComputeResult;
@@ -130,6 +128,19 @@ public class QueryContextSplitServiceImpl implements QueryContextSplitService {
             if(CollectionUtils.isNotEmpty(callbackMeasureName)) {
                 conditions.put(CallbackCondition.getInstance(), callbackMeasureName);
             }
+            if(!queryContext.getQueryMeasures().isEmpty()) {
+                if(!conditions.containsKey(EmptyCondition.getInstance())) {
+                    conditions.put(EmptyCondition.getInstance(), new HashSet<>());
+                }
+                for(MiniCubeMeasure m : queryContext.getQueryMeasures()) {
+                    if(!conditions.get(EmptyCondition.getInstance()).contains(m.getName())) {
+                        conditions.get(EmptyCondition.getInstance()).add(m.getName());
+                    }
+                }
+                
+            }
+            
+            
             if(MapUtils.isNotEmpty(conditions)) {
                 conditions.forEach((con, vars) -> {
                     QueryContext context = con.processCondition(
@@ -149,13 +160,6 @@ public class QueryContextSplitServiceImpl implements QueryContextSplitService {
                         }
                         if(!context.getQueryMeasures().contains(measure)) {
                             context.getQueryMeasures().add(measure);
-                        }
-                    }
-                    if(con.getConditionType().equals(ConditionType.None) && CollectionUtils.isNotEmpty(queryContext.getQueryMeasures())) {
-                        for(MiniCubeMeasure m : queryContext.getQueryMeasures()) {
-                            if(!context.getQueryMeasures().contains(m)) {
-                                context.getQueryMeasures().add(m);
-                            }
                         }
                     }
                     result.getConditionQueryContext().put(con, context);
@@ -217,11 +221,22 @@ public class QueryContextSplitServiceImpl implements QueryContextSplitService {
         
         // 条件，指标UniqueName，父节点UniqueName，数据
         Map<Condition, Map<String, Map<String, List<BigDecimal>>>> dataModelDatas = new HashMap<Condition, Map<String,Map<String,List<BigDecimal>>>>(splitResult.getDataModels().size());
+        if(!dataModelDatas.containsKey(EmptyCondition.getInstance())) {
+            dataModelDatas.put(EmptyCondition.getInstance(), new HashMap<>());
+        }
         splitResult.getDataModels().forEach((con, dm) -> {
+            boolean isCallbackCondition = con.equals(CallbackCondition.getInstance());
+            con = isCallbackCondition ? EmptyCondition.getInstance() : con;
             // 先把数据按照列封装了
             DataModelUtils.fillFieldData(dm, FillDataType.COLUMN);
             List<HeadField> columnFields = DataModelUtils.getLeafNodeList(dm.getColumnHeadFields());
-            Map<String, Map<String, List<BigDecimal>>> dataModelData = new HashMap<String, Map<String, List<BigDecimal>>>();
+            Map<String, Map<String, List<BigDecimal>>> dataModelData = null;
+            if(dataModelDatas.containsKey(con)) {
+                dataModelData = dataModelDatas.get(con);
+            }else {
+                dataModelData = new HashMap<String, Map<String, List<BigDecimal>>>();
+            }
+            
             // 存放叶子节点信息
             for(HeadField field : columnFields) {
                 if(!dataModelData.containsKey(field.getValue())) {
@@ -276,12 +291,10 @@ public class QueryContextSplitServiceImpl implements QueryContextSplitService {
                    compileContext.getVariablesResult().clear();
                    compileContext.setVariablesResult(categoryVariableVal.get(parentName));
 //                   compileContext.getVariablesResult().put(entry.getKey(), categoryVariableVal.get(parentName));
-                   calCulateDatas.put(parentName, ((ListComputeResult)compileContext.getNode().getResult(compileContext)).getData());
+                   calCulateDatas.put(parentName, ListComputeResult.transfer(compileContext.getNode().getResult(compileContext), rowLeafs.size()).getData());
                }
            }
-           if(!dataModelDatas.containsKey(EmptyCondition.getInstance())) {
-               dataModelDatas.put(EmptyCondition.getInstance(), new HashMap<>());
-           }
+           
            dataModelDatas.get(EmptyCondition.getInstance()).put(measureName, calCulateDatas);
         });
         mergeDataModelDatas(dataModel, dataModelDatas.get(EmptyCondition.getInstance()),constantResult);
@@ -301,7 +314,7 @@ public class QueryContextSplitServiceImpl implements QueryContextSplitService {
         List<HeadField> rowLeafs = DataModelUtils.getLeafNodeList(dataModel.getRowHeadFields());
         
         List<HeadField> oriColumnFields = DataModelUtils.getLeafNodeList(dataModel.getColumnHeadFields());
-        oriColumnFields.forEach(field -> {
+        for (HeadField field : oriColumnFields) {
             if(constantResult.containsKey(field.getValue())) {
                 field.setCompareDatas(constantResult.get(field.getValue()));
             } else {
@@ -309,9 +322,20 @@ public class QueryContextSplitServiceImpl implements QueryContextSplitService {
                 if(field.getParentLevelField() != null) {
                     pName = field.getParentLevelField().getNodeUniqueName();
                 }
-                field.setCompareDatas(datas.get(field.getValue()).get(pName));
+                field.setCompareDatas(datas ==  null ? null : datas.get(field.getValue()).get(pName));
             }
-        });
+        }
+//        oriColumnFields.forEach(field -> {
+//            if(constantResult.containsKey(field.getValue())) {
+//                field.setCompareDatas(constantResult.get(field.getValue()));
+//            } else {
+//                String pName = NONE;
+//                if(field.getParentLevelField() != null) {
+//                    pName = field.getParentLevelField().getNodeUniqueName();
+//                }
+//                field.setCompareDatas(datas.get(field.getValue()).get(pName));
+//            }
+//        });
         
         List<HeadField> columnLeafs = DataModelUtils.getLeafNodeList(dataModel.getColumnHeadFields());
         dataModel.getColumnBaseData().clear();

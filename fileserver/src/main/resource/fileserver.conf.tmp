@@ -1,2 +1,2 @@
-biplatform.fileserver.rootdir=/sample
+biplatform.fileserver.rootdir=D:/report
 biplatform.fileserver.port=9090

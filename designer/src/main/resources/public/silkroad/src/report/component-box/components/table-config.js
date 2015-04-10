@@ -48,7 +48,7 @@ define([
                     "hCellCut": 30,
                     "cCellCut": 30,
                     "vScroll": true,
-                    "rowCheckMode": "SELECT"
+                    "rowCheckMode": "SELECTONLY"
                 }
             },
             {
@@ -62,13 +62,14 @@ define([
                 "clzType": "VUI",
                 "clzKey": "H_BUTTON",
                 "dataOpt": {
-                    "skin": "ui-download-btn"
-                    //"text": "下载数据"
+                    "skin": "ui-download-btn",
+                    "text": "导出当前所有数据"
                 }
             },
             {
                 "clzType": "VUI",
                 "clzKey": "TEXT_LABEL",
+                "tpl": "符合条件的数据只显示#{currRecordCount}条",
                 "dataInitOpt": { "hide": true }
             }
         ];

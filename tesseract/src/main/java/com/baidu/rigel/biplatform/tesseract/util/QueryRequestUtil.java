@@ -15,6 +15,7 @@
  */
 package com.baidu.rigel.biplatform.tesseract.util;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,9 +46,9 @@ import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryContext;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryMeasure;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryObject;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryRequest;
-import com.baidu.rigel.biplatform.tesseract.resultset.TesseractResultSet;
-import com.baidu.rigel.biplatform.tesseract.resultset.isservice.ResultRecord;
-import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchResultSet;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.Meta;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchIndexResultRecord;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchIndexResultSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -327,10 +328,10 @@ public class QueryRequestUtil {
     }
     
     
-    public static TesseractResultSet processGroupBy(TesseractResultSet dataSet,
+    public static SearchIndexResultSet processGroupBy(SearchIndexResultSet dataSet,
             QueryRequest query, QueryContext queryContext) throws NoSuchFieldException {
         
-        LinkedList<ResultRecord> transList = null;
+        List<SearchIndexResultRecord> transList = null;
         long current = System.currentTimeMillis();
         Map<String, Map<String, Set<String>>> leafValueMap = QueryRequestUtil
             .transQueryRequest2LeafMap(query);
@@ -347,31 +348,32 @@ public class QueryRequestUtil {
                 measure.setAggregator(Aggregator.SUM);
             }
         });
+        Meta meta = dataSet.getMeta();
         int dimSize = query.getSelect().getQueryProperties().size();
-        if (dataSet != null && dataSet.size() != 0 && dataSet instanceof SearchResultSet) {
-            transList = (LinkedList<ResultRecord>) ((SearchResultSet) dataSet).getResultQ();
+        if (dataSet != null && dataSet.size() != 0 && dataSet instanceof SearchIndexResultSet) {
+            transList = dataSet.getDataList();
         
             if(MapUtils.isNotEmpty(leafValueMap)) {
                 // 如果一个叶子对应多个父节点，克隆一个再塞回去
-                List<ResultRecord> copyLeafRecords = new ArrayList<ResultRecord>();
+                List<SearchIndexResultRecord> copyLeafRecords = new ArrayList<SearchIndexResultRecord>();
                 transList.forEach( record -> {
                     leafValueMap.forEach((prop,valueMap) -> {
                         try {
-                            String currValue = record.getField(prop) != null ? record.getField(
-                                    prop).toString() : null;
+                            String currValue = record.getField(meta.getFieldIndex(prop)) != null ? record.getField(
+                                    meta.getFieldIndex(prop)).toString() : null;
                                 Set<String> valueSet = leafValueMap.get(prop).get(currValue);
                                 if(valueSet != null){
                                     int i = 0;
                                     for (String value : valueSet) {
                                         if(i > 0) {
                                             // 如果一个节点有多个父亲，那么在算总的汇总值得时候，会有数据问题。
-                                            ResultRecord newRec = DeepcopyUtils.deepCopy(record);
-                                            newRec.setField(prop, value);
-                                            generateGroupBy(newRec, groupList);
+                                            SearchIndexResultRecord newRec = DeepcopyUtils.deepCopy(record);
+                                            newRec.setField(meta.getFieldIndex(prop), value);
+                                            generateGroupBy(newRec, groupList, meta);
                                             copyLeafRecords.add(newRec);
                                         }else {
-                                            record.setField(prop, value);
-                                            generateGroupBy(record, groupList);
+                                            record.setField(meta.getFieldIndex(prop), value);
+                                            generateGroupBy(record, groupList, meta);
                                         }
                                         i++;
                                     }
@@ -389,13 +391,15 @@ public class QueryRequestUtil {
                 transList = AggregateCompute.aggregate(transList, dimSize, queryMeasures);
             }
         } else {
-            return new SearchResultSet(null);
+            return dataSet;
         }
         LOGGER.info("cost :" + (System.currentTimeMillis() - current) + " to map leaf.");
         current = System.currentTimeMillis();
         
         if(CollectionUtils.isEmpty(queryMeasures)){
-            return new SearchResultSet(AggregateCompute.distinct(transList));
+            
+            dataSet.setDataList(AggregateCompute.distinct(transList));
+            return dataSet;
         }
         
         
@@ -403,10 +407,10 @@ public class QueryRequestUtil {
         if(MapUtils.isNotEmpty(allDimVal)){
 //            List<ResultRecord> preResultList = DeepcopyUtils.deepCopy(transList);
             for(String properties : allDimVal.keySet()){
-                LinkedList<ResultRecord> summaryCalcList = new LinkedList<ResultRecord>();
-                for(ResultRecord record : transList){
-                    ResultRecord vRecord = DeepcopyUtils.deepCopy(record);
-                    vRecord.setField(properties, allDimVal.get(properties));
+                LinkedList<SearchIndexResultRecord> summaryCalcList = new LinkedList<SearchIndexResultRecord>();
+                for(SearchIndexResultRecord record : transList){
+                    SearchIndexResultRecord vRecord = DeepcopyUtils.deepCopy(record);
+                    vRecord.setField(meta.getFieldIndex(properties), allDimVal.get(properties));
 //                    generateGroupBy(vRecord, groupList);
                     vRecord.setGroupBy(allDimVal.get(properties));
                     summaryCalcList.add(vRecord);
@@ -414,62 +418,66 @@ public class QueryRequestUtil {
                 transList.addAll(AggregateCompute.aggregate(summaryCalcList, dimSize, queryMeasures));
             }
         }
-        
+        dataSet.setDataList(transList);
         LOGGER.info("cost :" + (System.currentTimeMillis() - current) + " aggregator leaf.");
-        return new SearchResultSet(transList);
+        return dataSet;
     }
     
-    /**
-     * 
-     * mapLeafValue2ValueOfRecord
-     * 
-     * @param record
-     *            ResultRecord
-     * @param leafValueMap
-     *            leafValueMap
-     * @return List<ResultRecord>
-     * @throws NoSuchFieldException
-     *             NoSuchFieldException
-     */
-    public static List<ResultRecord> mapLeafValue2ValueOfRecord(ResultRecord record,
-            Map<String, Map<String, Set<String>>> leafValueMap, List<String> groups) throws NoSuchFieldException {
-        //TODO 考虑将groups改成List，后续不用遍历meta中的所有直接遍历groups就可以
-        if (record == null || leafValueMap == null || leafValueMap.isEmpty()) {
-            return new ArrayList<ResultRecord>();
-        }
-        List<ResultRecord> result = new ArrayList<>();
-        
-        List<ResultRecord> tmpResult = new ArrayList<ResultRecord>();
-        for (String properties : leafValueMap.keySet()) {
-            String currValue = record.getField(properties) != null ? record.getField(
-                properties).toString() : null;
-            Set<String> valueSet = leafValueMap.get(properties).get(currValue);
-            if(valueSet != null){
-                for (String value : valueSet) {
-                    ResultRecord vRecord = DeepcopyUtils.deepCopy(record);
-                    vRecord.setField(properties, value);
-                    generateGroupBy(vRecord, groups);
-                    tmpResult.add(vRecord);
-                }
-            }
-        }
-        if(CollectionUtils.isEmpty(tmpResult)){
-            generateGroupBy(record, groups);
-            result.add(record);
-        }else{
-            result.addAll(tmpResult);
-        }
-        
-        return result;
-        
-    }
+//    /**
+//     * 
+//     * mapLeafValue2ValueOfRecord
+//     * 
+//     * @param record
+//     *            ResultRecord
+//     * @param leafValueMap
+//     *            leafValueMap
+//     * @return List<ResultRecord>
+//     * @throws NoSuchFieldException
+//     *             NoSuchFieldException
+//     */
+//    public static List<ResultRecord> mapLeafValue2ValueOfRecord(ResultRecord record,
+//            Map<String, Map<String, Set<String>>> leafValueMap, List<String> groups) throws NoSuchFieldException {
+//        //TODO 考虑将groups改成List，后续不用遍历meta中的所有直接遍历groups就可以
+//        if (record == null || leafValueMap == null || leafValueMap.isEmpty()) {
+//            return new ArrayList<ResultRecord>();
+//        }
+//        List<ResultRecord> result = new ArrayList<>();
+//        
+//        List<ResultRecord> tmpResult = new ArrayList<ResultRecord>();
+//        for (String properties : leafValueMap.keySet()) {
+//            String currValue = record.getField(properties) != null ? record.getField(
+//                properties).toString() : null;
+//            Set<String> valueSet = leafValueMap.get(properties).get(currValue);
+//            if(valueSet != null){
+//                for (String value : valueSet) {
+//                    ResultRecord vRecord = DeepcopyUtils.deepCopy(record);
+//                    vRecord.setField(properties, value);
+//                    generateGroupBy(vRecord, groups);
+//                    tmpResult.add(vRecord);
+//                }
+//            }
+//        }
+//        if(CollectionUtils.isEmpty(tmpResult)){
+//            generateGroupBy(record, groups);
+//            result.add(record);
+//        }else{
+//            result.addAll(tmpResult);
+//        }
+//        
+//        return result;
+//        
+//    }
     
-    public static void generateGroupBy(ResultRecord record, List<String> groups) throws NoSuchFieldException{
+    public static void generateGroupBy(SearchIndexResultRecord record, List<String> groups, Meta meta) throws NoSuchFieldException{
         if(CollectionUtils.isNotEmpty(groups)){
             String groupBy = "";
-            for(String meta : record.getMeta().getFieldNameArray()){
-                if(groups.contains(meta)){
-                    groupBy += record.getField(meta).toString() + ",";
+            Serializable field = null;
+            for(String name : meta.getFieldNameArray()){
+                if(groups.contains(name)){
+                    field = record.getField(meta.getFieldIndex(name));
+                    if(field != null) {
+                        groupBy += field.toString() + ",";
+                    }
                 }
             }
             record.setGroupBy(groupBy);

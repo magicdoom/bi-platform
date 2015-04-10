@@ -43,29 +43,32 @@ public class HeadFieldComparator implements Comparator<HeadField> {
 
     @Override
     public int compare(HeadField filed1, HeadField filed2) {
-            if (filed2 == null && filed1 == null) {
-                return 0;
-            } else if (sortType == null || sortType.equals(SortType.NONE)) {
-            return 0;
-        } else {
-            if (filed2!= null && filed2.getSummarizeData() == null) {
-                if (sortType.equals(SortType.ASC)) {
-                    return 1;
-                } else {
-                    return -1;
-                }
-            } else if (filed1 != null && filed1.getSummarizeData() == null) {
-                if (sortType.equals(SortType.ASC)) {
-                    return -1;
-                } else {
-                    return 1;
-                }
-            } else {
-                if (sortType.equals(SortType.ASC)) {
-                    return filed1.getSummarizeData().compareTo(filed2.getSummarizeData());
-                } else {
-                    return -filed1.getSummarizeData().compareTo(filed2.getSummarizeData());
-                }
+    		
+		if (filed2 == null && filed1 == null) {
+			return 0;
+		} else if (sortType == null || sortType.equals(SortType.NONE)) {
+			return 0;
+		} else {
+			if (filed2 != null && filed2.getSummarizeData() == null) {
+				if (sortType.equals(SortType.ASC)) {
+					return 1;
+				} else {
+					return -1;
+				}
+			} else if (filed1 != null && filed1.getSummarizeData() == null) {
+				if (sortType.equals(SortType.ASC)) {
+					return -1;
+				} else {
+					return 1;
+				}
+			} else {
+				if (sortType.equals(SortType.ASC)) {
+					return filed1.getSummarizeData().compareTo(
+							filed2.getSummarizeData());
+				} else {
+					return -filed1.getSummarizeData().compareTo(
+							filed2.getSummarizeData());
+				}
 
             }
         }

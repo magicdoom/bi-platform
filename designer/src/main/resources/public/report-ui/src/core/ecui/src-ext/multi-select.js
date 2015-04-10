@@ -73,6 +73,9 @@ _eInput - 多选项的INPUT对象
             },
             function(el, options) {
                 var values;
+                    me = this;
+                // TODO:为了适应当前配置的报表没有添加此属性，需要干掉
+                options.selectAllButton = true;
 
                 if (options.maxlength) {
                     this._nTextLen = options.maxlength;
@@ -87,7 +90,7 @@ _eInput - 多选项的INPUT对象
                     this._nMaxSelected = options.maxSelected;
                 }
                 else if (options.selectAllButton) {
-                    this.add('全部', 0, {selectAllButton: true});
+                    this.add(options.selectAllText, 0, {selectAllButton: true});
                     this._bSelectAllBtn = true;
                 }
                 if (options.tip) {
@@ -104,6 +107,18 @@ _eInput - 多选项的INPUT对象
                 }
 
                 this._eInput.disabled = true;
+
+                core.addEventListener(this._uOptions, 'scrollimmediately', handleScroll);
+                // 当滚动条滚动后，如果有全选，就始终浮在最上面
+                function handleScroll(event) {
+                    var items = me.getItems();
+                    var selectAllEl = items[0]._eBody;
+                    if (me._bSelectAllBtn) {
+                        // TODO:为items[0]添加样式
+                        selectAllEl.style.top = this._uVScrollbar.getValue() + 'px';
+                        core.dom.addClass(selectAllEl, 'ui-multi-select-selectall');
+                    }
+                }
             }
         ),
         UI_MULTI_SELECT_CLASS = UI_MULTI_SELECT.prototype,
@@ -176,6 +191,7 @@ _eInput - 多选项的INPUT对象
                     else {
                         text.push(o._sTip);
                     }
+
                 }
             }
             tip = '<span title="'+ text.join(',') +'">';
@@ -185,15 +201,21 @@ _eInput - 多选项的INPUT对象
                 && text.length == list.length + (control._bSelectAllBtn ? -1 : 0) 
             ) {
                 text = control._sTextAll;
+//                text = list[0]._sTip;
             }
             else if (text.length == 0 && control._sTextNone) {
                 text = control._sTextNone;
             }
             else {
-                text = text.join(',');
-                if (control._nTextLen && text.length > control._nTextLen) {
-                    text = text.substring(0, control._nTextLen) + '...';
-                }
+                text = [
+                    '已选中',
+                    text.length ,
+                    '项'
+                ].join('');
+//                text = text.join(',');
+//                if (control._nTextLen && text.length > control._nTextLen) {
+//                    text = text.substring(0, control._nTextLen) + '...';
+//                }
             }
             if (control._bTip) {
                 text = tip + text + '</span>';
@@ -203,6 +225,14 @@ _eInput - 多选项的INPUT对象
     }
 
     extend(UI_MULTI_SELECT_CLASS, UI_ITEMS);
+
+    var originRemoveMethod = UI_MULTI_SELECT_CLASS.remove;
+    UI_MULTI_SELECT_CLASS.remove = function () {
+        if (this._bSelectAllBtn && this.getItems().length <= 1) {
+            return null;
+        }
+        return originRemoveMethod.apply(this, arguments);
+    };
 
     /**
      * 鼠标单击控件事件的默认处理。
@@ -435,10 +465,18 @@ _eInput - 多选项的INPUT对象
     };
 
     UI_MULTI_SELECT_CLASS.getValue = function () {
-        var items = this.getSelected(),
+        var selectItems = this.getSelected(),
+            items,
             res = [], i, len;
-        for (i = 0, len = items.length; i < len; i++) {
-            if (!items[i]._bSelectAllBtn) {
+        for (i = 0, len = selectItems.length; i < len; i++) {
+            if (!selectItems[i]._bSelectAllBtn) {
+                res.push(selectItems[i]._eInput.value);
+            }
+        }
+        // 如果有全选按钮，且一个都没选中，那么传的值为所有的值
+        if (this._bSelectAllBtn && res.length === 0) {
+            items = this.getItems();
+            for (i = 1, len = items.length; i < len; i++) {
                 res.push(items[i]._eInput.value);
             }
         }
@@ -501,6 +539,24 @@ _eInput - 多选项的INPUT对象
         UI_MULTI_SELECT_FLUSH_SELECTALL(this);
         UI_MULTI_SELECT_FLUSH_TEXT(this);
     };
+
+//    /**
+//     * 为全选按钮重命名
+//     * @public
+//     *
+//     * @param {Array/String} values 控件被选中的值列表
+//     */
+//    UI_MULTI_SELECT_CLASS.setSelectAllText = function (text) {
+//        // FIXME:实现非常不好，需要优化
+//        var list = this.getItems(),
+//            html = list[0]._eBody.innerHTML;
+//        if (list.length > 0) {
+//            list[0]._sTip = text;
+//            list[0]._sValue = text;
+//            list[0]._eBody.innerHTML = html.replace(selectAllText, text);
+//        }
+//    };
+
 //{/if}//
 //{if 0}//
 })();

@@ -90,6 +90,7 @@ public class IndexSearcherFactory {
          */
         @Override
         public IndexSearcher newSearcher(IndexReader reader) throws IOException {
+        	
             return new IndexSearcher(reader, EXECUTOR_POOL);
         }
         
@@ -123,6 +124,7 @@ public class IndexSearcherFactory {
             File indexFile = new File(idxPath);
             if (indexFile.exists()) {
                 Directory directory = FSDirectory.open(indexFile);
+                
                 searcherManager = new SearcherManager(directory,
                         this.new TesseractSearcherFactory());
             } else {

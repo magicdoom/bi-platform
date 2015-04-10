@@ -150,6 +150,27 @@ define(function () {
         return url;
     }
 
+    /**
+     * 更换报表名称提交基本路径
+     *
+     * @param {string} reportId 报表id
+     * @public
+     * @return {string} 更换皮肤提交基本路径
+     */
+    function getReportName(reportId) {
+        return getReportsBaseUrl(reportId);
+    }
+    /**
+     * 更换报表名称提交基本路径
+     *
+     * @param {string} reportId 报表id
+     * @public
+     * @return {string} 更换皮肤提交基本路径
+     */
+    function getSaveReportName(reportId) {
+        return getReportsBaseUrl(reportId);
+    }
+
     //--------------------------------
     // 公用URL
     //--------------------------------
@@ -805,6 +826,47 @@ define(function () {
         return getExtendAreaBaseUrl(reportId, compId)
             + '/topn';
     };
+    /**
+     * 报表新建（编辑）- 图形编辑 - 颜色设置
+     * 获取指标提示信息
+     *
+     * @param {string} reportId 报表id
+     * @param {string} compId 组建区域的id
+     * @public
+     * @return {string} url
+     */
+    Url.getIndColorList = function (reportId, compId) {
+        return getExtendAreaBaseUrl(reportId, compId)
+            + '/colorformat';
+    };
+
+    /**
+     * 报表新建（编辑）-edit-setting
+     * 获取双坐标轴设置信息
+     *
+     * @param {string} reportId 报表id
+     * @param {string} compId 组建区域的id
+     * @public
+     * @return {string} url
+     */
+    Url.getAxisList = function (reportId, compId) {
+        return getExtendAreaBaseUrl(reportId, compId)
+            + '/position';
+    };
+
+    /**
+     * 报表新建（编辑）-edit-setting
+     * 获取topn设置信息
+     *
+     * @param {string} reportId 报表id
+     * @param {string} compId 组建区域的id
+     * @public
+     * @return {string} url
+     */
+    Url.getAxisList = function (reportId, compId) {
+        return getExtendAreaBaseUrl(reportId, compId)
+            + '/position';
+    };
 
     /**
      * 报表新建（编辑）-edit-setting
@@ -870,6 +932,30 @@ define(function () {
         return getSkinType(reportId)
             + '/theme/' + type;
     };
+    /**
+     * 更换报表名称
+     *
+     * @param {string} reportId 报表id
+     * @public
+     * @return {string} url
+     */
+    Url.editReportName = function (reportId) {
+        return getReportName(reportId)
+            + '/name/';
+    };
+    /**
+     * 保存更换报表名称
+     *
+     * @param {string} reportId 报表id
+     * @param {string} newReportName 新报表名称
+     * @public
+     * @return {string} url
+     */
+    Url.saveEditReportName = function (reportId, newReportName) {
+        return getSaveReportName(reportId)
+            + '/name/' + newReportName;
+    };
+
 
     return Url;
 });

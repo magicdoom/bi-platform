@@ -189,7 +189,7 @@ public class JsonUnSeriallizableUtils {
         metaJsonDataInfo.setMemberUniqueName(member.getUniqueName());
         metaJsonDataInfo.setQueryNodes(member.getQueryNodes());
         try {
-            if (CollectionUtils.isNotEmpty(member.getChildMembers(null, null, null))) {
+            if (CollectionUtils.isNotEmpty(member.getChildren())) {
                 for (Member child : member.getChildMembers(null, null, null)) {
                     metaJsonDataInfo.getChildren().add(parseMember2MetaJson((MiniCubeMember) child));
                 }

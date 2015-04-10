@@ -85,6 +85,11 @@ public enum ExtendAreaType {
     H_BUTTON,
     
     /**
+     * 单选下拉树
+     */
+    SINGLE_DROP_DOWN_TREE,
+    
+    /**
      * LiteOlap组件
      */
     LITEOLAP;

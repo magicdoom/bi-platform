@@ -17,6 +17,8 @@ package com.baidu.rigel.biplatform.tesseract.node.service;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
@@ -269,6 +271,7 @@ public class IndexAndSearchClient {
         throws IndexAndSearchException {
         logger.info("getChannelByAddressAndPort:[address=" + ipAddress + "][port=" + port
             + "] start");
+        long currTime=System.currentTimeMillis();
         if (StringUtils.isEmpty(ipAddress) || port <= 0) {
             throw new IndexAndSearchException(TesseractExceptionUtils.getExceptionMessage(
                 IndexAndSearchException.INDEXEXCEPTION_MESSAGE,
@@ -293,7 +296,7 @@ public class IndexAndSearchClient {
                 IndexAndSearchExceptionType.INDEX_EXCEPTION), e,
                 IndexAndSearchExceptionType.INDEX_EXCEPTION);
         }
-        
+        System.out.println("getChannelByAddressAndPort cost : "+ (System.currentTimeMillis()-currTime)+" ms");
         logger.info("getChannelByAddressAndPort:[address=" + address + "][port=" + port
             + "] connect sucess");
         return channel;
@@ -572,12 +575,12 @@ public class IndexAndSearchClient {
         channel.pipeline().addLast(handler);
         
         channel.writeAndFlush(message);
-        channel.closeFuture().sync();
+        channel.closeFuture().sync ();
         
-       
         returnMessage = handler.getMessage();
         
         handler.setMessage(null);
+        channel.close ();
         
         logger.info("executeAction:[NettyAction=" + action + "][Message=" + message + "][Handler="
             + handler + "] success");

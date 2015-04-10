@@ -149,4 +149,13 @@ public interface IndexMetaService {
      */
     void recoverLocalIndexMetaWithCluster(List<IndexMeta> idxMetaList,String clusterName);
     
+    
+    /**
+     * getIndexMetaByIndexMetaId
+     * @param idxMetaId idxMetaId
+     * @param storeKey storeKey
+     * @return IndexMeta
+     */
+    IndexMeta getIndexMetaByIndexMetaId(String idxMetaId, String storeKey);
+    
 }

@@ -8,8 +8,10 @@
     z-index:0;
 }
 .xui-e-chart-header {
-    width: 100%;
-    height: 25px;
+    position: absolute;
+    top: 14px;
+    left: 80px;
+    z-index: 999;
 }
 .xui-e-chart-title {
     font-weight:bold;
@@ -46,7 +48,7 @@
     background-position:-42px -385px;
 }
 .xui-e-chart-content {
-    height:80%;
+    height:100%;
 }
 .xui-e-chart-empty {
     width: 99%;
@@ -62,7 +64,7 @@
     padding: 2px 6px;
     cursor: pointer;
     border: 1px solid white;
-    font-family: 微 软 雅 黑, Arial;
+    font-family: "微软雅黑", "Arial";
     font-size: 12px;
     color: #282828;
     fill: #282828;
@@ -86,24 +88,26 @@
 }
 .echarts-candidate {
     float: left;
-    margin-left: 5px;
+    /*margin-left: 5px;*/
 }
 .echarts-candidate label {
     float: left;
     margin-top: 5px;
-    padding-left: 5px;
-    padding-bottom: 10px;
+    margin-right: 8px;
     height: 15px;
     line-height: 15px;
+    cursor: pointer;
+    font-family: "微软雅黑", "宋体";
+    font-size: 12px;
+
 }
 .echarts-candidate input {
     float: left;
     margin-top: 5px;
-    padding-left: 5px;
-    padding-bottom: 10px;
     height: 15px;
     line-height: 15px;
     width: 20px;
+    cursor: pointer;
 }
 
 /**

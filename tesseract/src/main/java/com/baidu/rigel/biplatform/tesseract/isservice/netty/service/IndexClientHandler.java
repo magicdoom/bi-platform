@@ -17,8 +17,6 @@ package com.baidu.rigel.biplatform.tesseract.isservice.netty.service;
 
 import io.netty.channel.ChannelHandlerContext;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,8 +76,8 @@ public class IndexClientHandler extends AbstractChannelInboundHandler {
     public void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
         logger.info(String.format(LogInfoConstants.INFO_PATTERN_MESSAGE_RECEIVED_BEGIN,
             "IndexClientHandler"));
-        System.out.println("hahaahha~~~~~~in reading ");
-        System.out.println("hahaahha~~~~~~in reading msg is :"+msg);
+        logger.info(String.format(LogInfoConstants.INFO_PATTERN_FUNCTION_PROCESS,
+                "IndexClientHandler",msg,"messageReceived"));
         if (msg instanceof IndexMessage) {
             message = (AbstractMessage)msg ;
         } else {
@@ -100,8 +98,8 @@ public class IndexClientHandler extends AbstractChannelInboundHandler {
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
         
         super.channelReadComplete(ctx);
-        System.out.println("hahaahha~~~~~~in read complete");
-        System.out.println("hahaahha~~~~~~message is :"+this.message);
+//        logger.info(String.format(LogInfoConstants.INFO_PATTERN_FUNCTION_PROCESS,
+//                "IndexClientHandler",this.message,"read complete"));
         
     }
 

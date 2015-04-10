@@ -25,12 +25,12 @@ import org.springframework.cache.Cache;
 import org.springframework.stereotype.Service;
 
 import com.baidu.rigel.biplatform.ac.query.data.DataSourceInfo;
+import com.baidu.rigel.biplatform.cache.StoreManager;
 import com.baidu.rigel.biplatform.tesseract.datasource.DataSourceManager;
 import com.baidu.rigel.biplatform.tesseract.datasource.DataSourceManagerFactory;
 import com.baidu.rigel.biplatform.tesseract.datasource.DataSourcePoolService;
 import com.baidu.rigel.biplatform.tesseract.datasource.DataSourceWrap;
 import com.baidu.rigel.biplatform.tesseract.exception.DataSourceException;
-import com.baidu.rigel.biplatform.tesseract.store.service.StoreManager;
 
 /**
  * 数据源信息实现

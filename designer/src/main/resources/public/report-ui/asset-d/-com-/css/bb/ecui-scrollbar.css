@@ -10,7 +10,7 @@
     cursor: default;
     padding: 0px;
     margin: 0px;
-    background-color: #D8D8D8;
+    /*background-color: #D8D8D8;*/
 }
 .ui-vscrollbar .ui-button-hover {
     padding: 0px;
@@ -23,9 +23,8 @@
     -ms-border-radius: 0px;
 }
 .ui-vscrollbar-prev {
-    width: 16px;
+    width: 20px;
     height: 16px;
-    border: 0px;
     background: url(img/icon.png) -81px -203px no-repeat;
 }
 .ui-vscrollbar-next {
@@ -35,7 +34,7 @@
     background: url(img/icon.png) -63px -203px no-repeat;
 }
 .ui-vscrollbar .ui-scrollbar-thumb {
-    width: 16px;
+    width: 7px;
     border-top: 1px solid #F0F0F0;
     border-bottom: 1px solid #F0F0F0;
     background: #D8D8D8;

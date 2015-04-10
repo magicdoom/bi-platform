@@ -73,4 +73,19 @@ public class TesseractConstant {
      * 重试次数
      */
     public static final int RETRY_TIMES = 3;
+    
+    /**
+     * callback 汇总节点key
+     */
+    public static final String SUMMARY_KEY = "SUMMARY";
+    
+    /**
+     * 是否采用二八原则进行统计计算 目前只有统计图支持此操作 注意：请勿修改此参数 此处为临时方案
+     */
+    public static final String NEED_OTHERS = "NEED_OTHERS";
+    
+    /**
+     * 注意：此处为临时方案，请勿擅自修改此参数，否则可能导致逻辑错误
+     */
+    public static final String NEED_OTHERS_VALUE = "1";
 }

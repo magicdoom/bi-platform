@@ -57,7 +57,7 @@ public final class CallbackServiceInvoker {
      * @return CallbackResponse callback响应
      */
     public static CallbackResponse invokeCallback(String url, Map<String, String> params, CallbackType type) {
-        return invokeCallback(url, params, type, Integer.MAX_VALUE);
+        return invokeCallback(url, params, type, 50000);
     }
     
     /**
@@ -71,6 +71,24 @@ public final class CallbackServiceInvoker {
     public static CallbackResponse invokeCallback(String url, Map<String, String> params,
             CallbackType type, long timeOutMillSecond) {
         long begin = System.currentTimeMillis();
+        
+        if (timeOutMillSecond <= 0) {
+            timeOutMillSecond = 1000;
+        }
+        params.put(HttpRequest.SOCKET_TIME_OUT, String.valueOf(timeOutMillSecond));
+        // TODO 这里先做容错处理，待小明来来了以后排查具体原因
+//        if (url.contains("\\?")) {
+//        	String[] tmp = url.split("\\?");
+//        	url = tmp[0];
+//        	String[] paramsMap = tmp[1].split("&");
+//        	for (String str : paramsMap) {
+//        		tmp = str.split("=");
+//        		if (params.containsKey(tmp[0])) {
+//        			continue;
+//        		}
+//        		params.put(tmp[0], tmp[1]);
+//        	}
+//        }
         LOG.info("[INFO] --- --- begin invoke callback service ... ...");
         LOG.info("[INFO] --- --- params : {}", params);
         LOG.info("[INFO] --- --- request url : {}", url);
@@ -78,19 +96,20 @@ public final class CallbackServiceInvoker {
         LOG.info("[INFO] --- --- callback type : {}", type.name());
         LOG.info("[INFO] --- --- end invoke callback service. result is : \r\n");
         LOG.info("[INFO] -------------------------------------------------------------------------\r\n" );
-        if (timeOutMillSecond <= 0) {
-            timeOutMillSecond = 1000;
+        try {
+            String responseStr = HttpRequest.sendPost1(url, params);
+            CallbackResponse response = convertStrToResponse(responseStr, type);
+            LOG.info("[INFO] --- --- resposne : {}", response);
+            LOG.info("[INFO] -------------------------------------------------------------------------\r\n" );
+            long end = System.currentTimeMillis() - begin;
+            LOG.info("[INFO] --- --- invoke callback service cost : " + end + "ms,"
+                    + " cost on data transfer : " + (end - response.getCost()) + "ms,"
+                    + " callback execute cost : " + response.getCost() + "ms") ;
+            return response;
+        } catch (Exception e) {
+            LOG.error (e.getMessage (), e);
+            throw new RuntimeException(e);
         }
-        params.put(HttpRequest.SOCKET_TIME_OUT, String.valueOf(timeOutMillSecond));
-        String responseStr = HttpRequest.sendGet(url, params);
-        CallbackResponse response = convertStrToResponse(responseStr, type);
-        LOG.info("[INFO] --- --- resposne : {}", response);
-        LOG.info("[INFO] -------------------------------------------------------------------------\r\n" );
-        long end = System.currentTimeMillis() - begin;
-        LOG.info("[INFO] --- --- invoke callback service cost : " + end + "ms,"
-                + " cost on data transfer : " + (end - response.getCost()) + "ms,"
-                + " callback execute cost : " + response.getCost() + "ms") ;
-        return response;
     }
 
     /**

@@ -30,6 +30,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.baidu.rigel.biplatform.ac.minicube.MiniCubeSchema;
+import com.baidu.rigel.biplatform.ac.model.Cube;
 import com.baidu.rigel.biplatform.ac.model.Schema;
 import com.baidu.rigel.biplatform.ma.ds.exception.DataSourceOperationException;
 import com.baidu.rigel.biplatform.ma.ds.service.DataSourceService;
@@ -51,6 +52,8 @@ import com.baidu.rigel.biplatform.ma.model.service.StarModelBuildService;
 import com.baidu.rigel.biplatform.ma.model.utils.DBInfoReader;
 import com.baidu.rigel.biplatform.ma.model.utils.DBUrlGeneratorUtils;
 import com.baidu.rigel.biplatform.ma.report.exception.CacheOperationException;
+import com.baidu.rigel.biplatform.ma.report.model.Item;
+import com.baidu.rigel.biplatform.ma.report.model.LogicModel;
 import com.baidu.rigel.biplatform.ma.report.model.ReportDesignModel;
 import com.baidu.rigel.biplatform.ma.resource.cache.CacheManagerForResource;
 import com.baidu.rigel.biplatform.ma.resource.cache.ReportModelCacheManager;
@@ -358,6 +361,7 @@ public class DimConfigResource extends BaseResource {
             rs = ResourceUtils.getErrorResult("error when modify", 1);
         } else {
             reportModel.setSchema((MiniCubeSchema) schema);
+            updateReportModelWithSchema(reportModel, schema);
             try {
                 reportModelCacheManager.updateReportModelToCache(reportId, reportModel);
             } catch (CacheOperationException e) {
@@ -369,6 +373,80 @@ public class DimConfigResource extends BaseResource {
         return rs;
     }
     
+    /**
+     * 
+     * @param reportModel
+     * @param schema
+     */
+    private void updateReportModelWithSchema(ReportDesignModel reportModel, Schema schema) {
+        if (reportModel.getExtendAreas () == null || reportModel.getExtendAreas ().isEmpty ()) {
+            return;
+        }
+        reportModel.getExtendAreas ().values ().forEach (area -> {
+            Cube cube = schema.getCubes ().get (area.getCubeId ());
+            if (cube != null) {
+                LogicModel logicModel = area.getLogicModel ();
+                if (logicModel != null) {
+                    updateLogicModelWithCube(logicModel, cube);
+                }
+            }
+        });
+    }
+
+    private void updateLogicModelWithCube(LogicModel logicModel, Cube cube) {
+        Item[] cols = logicModel.getColumns ();
+        if (cols.length > 0) {
+            updateCols (logicModel, cube, cols);
+        }
+        
+        if (logicModel.getSelectionMeasures () != null && !logicModel.getSelectionMeasures ().isEmpty ()) {
+            for(Item item : logicModel.getSelectionMeasures ().values ().toArray (new Item[0])) {
+                if (!cube.getMeasures ().containsKey (item.getOlapElementId ())) {
+                    logicModel.getSelectionMeasures ().remove (item.getOlapElementId ());
+                }
+            }
+        }
+        
+        if (logicModel.getRows ().length > 0) {
+            updateDimItem(logicModel, cube, logicModel.getRows (), false);
+        }
+        
+        Item[] slices = logicModel.getSlices ();
+        if (slices.length > 0) {
+            updateDimItem (logicModel, cube, slices, true);
+        }
+        
+        if (logicModel.getSelectionDims () != null && !logicModel.getSelectionDims ().isEmpty ()) {
+            for(Item item : logicModel.getSelectionDims ().values ().toArray (new Item[0])) {
+                if (!cube.getDimensions ().containsKey (item.getOlapElementId ())) {
+                    logicModel.getSelectionDims ().remove (item.getOlapElementId ());
+                }
+            }
+        }
+    }
+
+    private void updateCols(LogicModel logicModel, Cube cube, Item[] cols) {
+        for (Item item : cols) {
+            if (cube.getMeasures ().containsKey (item.getOlapElementId ())) {
+                continue;
+            }
+            logicModel.removeColumn (item.getOlapElementId ());
+        }
+    }
+
+    private void updateDimItem(LogicModel logicModel, Cube cube, Item[] slices, boolean isSlices) {
+        for (Item item : slices) {
+            if (cube.getDimensions ().containsKey (item.getOlapElementId ())) {
+                continue;
+            }
+            if (isSlices) {
+                logicModel.removeSlice (item.getOlapElementId ());
+            } else {
+                logicModel.removeRow (item.getOlapElementId ());
+            }
+        }
+    }
+
     /**
      * 
      * @param starModel

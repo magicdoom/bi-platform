@@ -27,7 +27,6 @@ import com.baidu.rigel.biplatform.ma.report.service.ReportDesignModelService;
 import com.baidu.rigel.biplatform.ma.report.utils.ContextManager;
 import com.baidu.rigel.biplatform.ma.rt.Context;
 import com.baidu.rigel.biplatform.ma.rt.ExtendAreaContext;
-import com.baidu.rigel.biplatform.ma.rt.utils.RuntimeEvnUtil;
 
 /**
  * 
@@ -292,13 +291,13 @@ public class ReportModelCacheManager {
      * @return Context
      * 
      */
-    public Context getContext(String reportId) {
-        int key = genContextKey(reportId);
-        if (cacheManagerForReource.getFromCache(String.valueOf(key)) == null) {
-            ReportDesignModel designModel = this.getReportModel(reportId);
-            return RuntimeEvnUtil.initRuntimeEvn(designModel, null, null);
-        }
-        return (Context) cacheManagerForReource.getFromCache(String.valueOf(key));
-    }
+//    public Context getContext(String reportId) {
+//        int key = genContextKey(reportId);
+//        if (cacheManagerForReource.getFromCache(String.valueOf(key)) == null) {
+//            ReportDesignModel designModel = this.getReportModel(reportId);
+//            return RuntimeEvnUtil.initRuntimeEvn(designModel, null, null);
+//        }
+//        return (Context) cacheManagerForReource.getFromCache(String.valueOf(key));
+//    }
     
 }

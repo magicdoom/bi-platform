@@ -117,15 +117,17 @@ public class TesseractResultRecordCollector extends Collector {
      */
     @Override
     public void collect(int doc) throws IOException {
-        List<Serializable> fieldValueList = new ArrayList<Serializable>();
-        // List<String> fieldNameList=new ArrayList<String>();
+        //List<Serializable> fieldValueList = new ArrayList<Serializable>();
+        Serializable[] fieldValueArray=new Serializable[this.dimFields.length+this.measureFields.length];
         String groupBy = "";
-        
+        int i=0;
         for (String dim : dimFields) {
             BinaryDocValues fieldValues = currBinaryDocValuesMap.get(dim);
             BytesRef byteRef = fieldValues.get(doc);
             String dimVal = byteRef.utf8ToString();
-            fieldValueList.add(dimVal);
+            //fieldValueList.add(dimVal);
+            fieldValueArray[i++]=dimVal;
+            
             if (groupByFields.contains(dim)) {
                 groupBy += dimVal + ",";
             }
@@ -133,11 +135,11 @@ public class TesseractResultRecordCollector extends Collector {
         
         for (String measure : this.measureFields) {
             FieldCache.Doubles fieldValues = currDoubleValuesMap.get(measure);
-            fieldValueList.add(fieldValues.get(doc));
+           // fieldValueList.add(fieldValues.get(doc));
+            fieldValueArray[i++]=fieldValues.get(doc);
         }
         
-        ResultRecord record = new ResultRecord(fieldValueList.toArray(new Serializable[0]),
-                this.meta);
+        ResultRecord record = new ResultRecord(fieldValueArray, this.meta);
         record.setGroupBy(groupBy);
         this.result.add(record);
         
@@ -176,6 +178,15 @@ public class TesseractResultRecordCollector extends Collector {
      */
     public List<ResultRecord> getResult() {
         return result;
+    }
+
+    /** 
+     * 获取 meta 
+     * @return the meta 
+     */
+    public Meta getMeta() {
+    
+        return meta;
     }
     
 }

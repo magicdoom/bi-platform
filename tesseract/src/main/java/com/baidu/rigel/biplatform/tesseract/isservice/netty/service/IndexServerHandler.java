@@ -24,9 +24,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.Set;
 
 import org.apache.commons.collections.CollectionUtils;
@@ -50,9 +48,9 @@ import com.baidu.rigel.biplatform.tesseract.netty.message.AbstractMessage;
 import com.baidu.rigel.biplatform.tesseract.netty.message.MessageHeader;
 import com.baidu.rigel.biplatform.tesseract.netty.message.NettyAction;
 import com.baidu.rigel.biplatform.tesseract.netty.message.isservice.IndexMessage;
-import com.baidu.rigel.biplatform.tesseract.resultset.TesseractResultSet;
-import com.baidu.rigel.biplatform.tesseract.resultset.isservice.ResultRecord;
-import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchResultSet;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.Meta;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchIndexResultRecord;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchIndexResultSet;
 import com.baidu.rigel.biplatform.tesseract.util.FileUtils;
 import com.baidu.rigel.biplatform.tesseract.util.isservice.LogInfoConstants;
 
@@ -67,37 +65,34 @@ public class IndexServerHandler extends AbstractChannelInboundHandler {
     /**
      * logger
      */
-    private Logger logger = LoggerFactory.getLogger(IndexServerHandler.class);
+    private Logger logger = LoggerFactory.getLogger (IndexServerHandler.class);
     
     /**
      * ACTION_SUPPORT_SET 支持的处理请求类型
      */
-    private static final Set<NettyAction> ACTION_SUPPORT_SET = new HashSet<NettyAction>();
+    private static final Set<NettyAction> ACTION_SUPPORT_SET = new HashSet<NettyAction> ();
     /**
      * 返回消息的action
      */
     private static final NettyAction ACTION_FEEDBACK = NettyAction.NETTY_ACTION_INDEX_FEEDBACK;
     
     /**
-     * init ACTION_SUPPORT_SET
-     * IndexServerHandler支持：索引、更新、初始化索引、修订索引等操作
+     * init ACTION_SUPPORT_SET IndexServerHandler支持：索引、更新、初始化索引、修订索引等操作
      */
-	static {
-		ACTION_SUPPORT_SET.add(NettyAction.NETTY_ACTION_INDEX);
-		ACTION_SUPPORT_SET.add(NettyAction.NETTY_ACTION_UPDATE);
-		ACTION_SUPPORT_SET.add(NettyAction.NETTY_ACTION_INITINDEX);
-		ACTION_SUPPORT_SET.add(NettyAction.NETTY_ACTION_MOD);
-	}
-    
-    
+    static {
+        ACTION_SUPPORT_SET.add (NettyAction.NETTY_ACTION_INDEX);
+        ACTION_SUPPORT_SET.add (NettyAction.NETTY_ACTION_UPDATE);
+        ACTION_SUPPORT_SET.add (NettyAction.NETTY_ACTION_INITINDEX);
+        ACTION_SUPPORT_SET.add (NettyAction.NETTY_ACTION_MOD);
+    }
     
     /**
-     * Constructor by 
+     * Constructor by
      */
     private IndexServerHandler() {
-        super(ACTION_FEEDBACK);
+        super (ACTION_FEEDBACK);
     }
-
+    
     /**
      * 单例
      */
@@ -111,7 +106,7 @@ public class IndexServerHandler extends AbstractChannelInboundHandler {
      */
     public static synchronized IndexServerHandler getChannelHandler() {
         if (INDEX_SERVER_HANDLER == null) {
-            INDEX_SERVER_HANDLER = new IndexServerHandler();
+            INDEX_SERVER_HANDLER = new IndexServerHandler ();
         }
         return INDEX_SERVER_HANDLER;
     }
@@ -125,16 +120,13 @@ public class IndexServerHandler extends AbstractChannelInboundHandler {
      */
     @Override
     public boolean support(NettyAction action) {
-        if (ACTION_SUPPORT_SET.contains(action)) {
-            logger.info("IndexServerHandler support action:" + action);
+        if (ACTION_SUPPORT_SET.contains (action)) {
+            logger.info ("IndexServerHandler support action:" + action);
             return true;
         } else {
             return false;
         }
     }
-    
-    
-   
     
     /*
      * (non-Javadoc)
@@ -145,147 +137,184 @@ public class IndexServerHandler extends AbstractChannelInboundHandler {
      * java.lang.Object)
      */
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, Object msg) throws Exception {
-        logger.info(String.format(LogInfoConstants.INFO_PATTERN_MESSAGE_RECEIVED_BEGIN,
-            "IndexServerHandler"));
+    public void messageReceived(ChannelHandlerContext ctx, Object msg)
+            throws Exception {
+        logger.info (String.format (
+                LogInfoConstants.INFO_PATTERN_MESSAGE_RECEIVED_BEGIN,
+                "IndexServerHandler"));
         IndexMessage indexMsg = (IndexMessage) msg;
         // 从消息中获取索引路径
-        File idxFile = new File(indexMsg.getIdxPath());
-        File idxServiceFile = new File(indexMsg.getIdxServicePath());
+        File idxFile = new File (indexMsg.getIdxPath ());
+        File idxServiceFile = new File (indexMsg.getIdxServicePath ());
         
-        if (indexMsg.getMessageHeader().getAction().equals(NettyAction.NETTY_ACTION_UPDATE)
-                || indexMsg.getMessageHeader().getAction().equals(NettyAction.NETTY_ACTION_INITINDEX) 
-                || indexMsg.getMessageHeader().getAction().equals(NettyAction.NETTY_ACTION_MOD)) {
+        if (indexMsg.getMessageHeader ().getAction ()
+                .equals (NettyAction.NETTY_ACTION_UPDATE)
+                || indexMsg.getMessageHeader ().getAction ()
+                        .equals (NettyAction.NETTY_ACTION_INITINDEX)
+                || indexMsg.getMessageHeader ().getAction ()
+                        .equals (NettyAction.NETTY_ACTION_MOD)) {
             // 如果是索引更新、初始化、修订过程
             // 清理写索引路径
-            FileUtils.deleteFile(idxFile);
-			if ((indexMsg.getMessageHeader().getAction().equals(NettyAction.NETTY_ACTION_UPDATE) 
-			     || indexMsg.getMessageHeader().getAction().equals(NettyAction.NETTY_ACTION_MOD))
-				&& idxServiceFile.exists()) {
-				// 索引更新\修订，复制索引目录
-				FileUtils.copyFolder(indexMsg.getIdxServicePath(),
-						indexMsg.getIdxPath());
-			}
+            FileUtils.deleteFile (idxFile);
+            if ((indexMsg.getMessageHeader ().getAction ()
+                    .equals (NettyAction.NETTY_ACTION_UPDATE) || indexMsg
+                    .getMessageHeader ().getAction ()
+                    .equals (NettyAction.NETTY_ACTION_MOD))
+                    && idxServiceFile.exists ()) {
+                // 索引更新\修订，复制索引目录
+                FileUtils.copyFolder (indexMsg.getIdxServicePath (),
+                        indexMsg.getIdxPath ());
+            }
         }
         
-        IndexWriter idxWriter = IndexWriterFactory.getIndexWriter(indexMsg.getIdxPath());
-        TesseractResultSet data=null;
+        IndexWriter idxWriter = IndexWriterFactory.getIndexWriter (indexMsg.getIdxPath ());
+        SearchIndexResultSet data = null;
         
-        if(indexMsg.getMessageHeader().getAction().equals(NettyAction.NETTY_ACTION_MOD)){
-        	//索引修订
-        	//S1:查找索引中存在的数据
-            Queue<ResultRecord> dataQ=((SearchResultSet)indexMsg.getDataBody()).getResultQ();
-            Iterator<ResultRecord> it=dataQ.iterator();
+        if (indexMsg.getMessageHeader ().getAction ().equals (NettyAction.NETTY_ACTION_MOD)) {
+            // 索引修订
+            // S1:查找索引中存在的数据
+            // Queue<ResultRecord>
+            // dataQ=((SearchResultSet)indexMsg.getDataBody()).getResultQ();
+            List<SearchIndexResultRecord> dataQ = ((SearchIndexResultSet) indexMsg
+                    .getDataBody ()).getDataList ();
+            Iterator<SearchIndexResultRecord> it = dataQ.iterator ();
             
-            LinkedList<ResultRecord> dataProcess=new LinkedList<ResultRecord>();
-            List<Query> deleteQueryList=new ArrayList<Query>();
-            while(it.hasNext()){
-            	ResultRecord currRecord=it.next();
-            	//查询
-            	Query query=existInIndex(currRecord,indexMsg.getIdxPath(),indexMsg.getIdName());
-            	if(query!=null){
-            		//如果存在，则从队列中删除
-            		dataProcess.add(currRecord);
-            		it.remove();
-            		deleteQueryList.add(query);
-            	}
+            List<SearchIndexResultRecord> dataProcess = new ArrayList<SearchIndexResultRecord> ();
+            List<Query> deleteQueryList = new ArrayList<Query> ();
+            while (it.hasNext ()) {
+                SearchIndexResultRecord currRecord = it.next ();
+                // 查询
+                Query query = existInIndex (currRecord, indexMsg.getIdxPath (), indexMsg.getIdName (),
+                        ((SearchIndexResultSet) indexMsg.getDataBody ()).getMeta ());
+                if (query != null) {
+                    // 如果存在，则从队列中删除
+                    dataProcess.add (currRecord);
+                    it.remove ();
+                    deleteQueryList.add (query);
+                }
             }
-        	//S2:删除旧数据
-            if(!CollectionUtils.isEmpty(deleteQueryList)){
-            	idxWriter.deleteDocuments(deleteQueryList.toArray(new Query[0]));
-            	idxWriter.commit();
+            // S2:删除旧数据
+            if (!CollectionUtils.isEmpty (deleteQueryList)) {
+                idxWriter.deleteDocuments (deleteQueryList
+                        .toArray (new Query[0]));
+                idxWriter.commit ();
             }
-            //S3:设置需要重建索引的数据
-            data=new SearchResultSet(dataProcess);
+            // S3:设置需要重建索引的数据
+            data = new SearchIndexResultSet (
+                    ((SearchIndexResultSet) indexMsg.getDataBody ()).getMeta (),
+                    dataProcess.size ());
+            data.setDataList(dataProcess);
         }
         
-        
-        if(data==null){
-        	data = indexMsg.getDataBody();
+        if (data == null) {
+            data = (SearchIndexResultSet) indexMsg.getDataBody ();
         }
         
-        long currDiskSize = FileUtils.getDiskSize(indexMsg.getIdxPath());
+        logger.info (String.format (
+                LogInfoConstants.INFO_PATTERN_FUNCTION_PROCESS_NO_PARAM,
+                "IndexServerHandler", "Begin to index "
+                        + (data == null ? 0 : data.size ()) + " data"));
+        long currDiskSize = FileUtils.getDiskSize (indexMsg.getIdxPath ());
         BigDecimal currMaxId = null;
         // 读取数据建索引
-        if (currDiskSize < indexMsg.getBlockSize()) {
-            while (data.next() && currDiskSize < indexMsg.getBlockSize()) {
-                Document doc = new Document();
-                String[] fieldNameArr = data.getFieldNameArray();
+        
+        long count=0;
+        if (currDiskSize < indexMsg.getBlockSize ()) {
+            while (( currDiskSize < indexMsg.getBlockSize ()) && data.next ()) {
+                Document doc = new Document ();
+                String[] fieldNameArr = data.getFieldNameArray ();
                 for (String select : fieldNameArr) {
-                    if (select.equals(indexMsg.getIdName())) {
-                        currMaxId = data.getBigDecimal(select);
+                    if (select.equals (indexMsg.getIdName ())) {
+                        currMaxId = data.getBigDecimal (select);
                     }
-
-                    doc.add(new StringField(select, data.getString(select), Field.Store.NO));
+                    
+                    doc.add (new StringField (select, data.getString (select),
+                            Field.Store.NO));
                 }
+                count++;
+                idxWriter.addDocument (doc);
                 
-                idxWriter.addDocument(doc);
-                
-                if ((currDiskSize + idxWriter.ramBytesUsed()) > indexMsg.getBlockSize()) {
+                if ((currDiskSize + idxWriter.ramBytesUsed ()) > indexMsg
+                        .getBlockSize ()) {
                     // 预估数据大于分片大小，则提交当前的数据
-                    idxWriter.commit();
+                    idxWriter.commit ();
                     // 重计算实际索引目示大小
-                    currDiskSize = FileUtils.getDiskSize(indexMsg.getIdxPath());
+                    currDiskSize = FileUtils.getDiskSize (indexMsg
+                            .getIdxPath ());
                 }
             }
-            idxWriter.commit();
+            idxWriter.commit ();
             
         }
         
+        logger.info (String.format (
+                LogInfoConstants.INFO_PATTERN_FUNCTION_PROCESS_NO_PARAM,
+                "IndexServerHandler", " finish index "+count+" record"));
         String feedBackIndexServicePath = null;
         String feedBackIndexFilePath = null;
         // 如果当前分片写满了 or 是当前数据的最后一片，释放indexWriter\设置服务路径
-        long totalDiskSize = FileUtils.getDiskSize(indexMsg.getIdxPath());
-        if (totalDiskSize > indexMsg.getBlockSize() || indexMsg.isLastPiece()) {
-            IndexWriterFactory.destoryWriters(indexMsg.getIdxPath());
-            feedBackIndexServicePath = indexMsg.getIdxPath();
-            feedBackIndexFilePath = indexMsg.getIdxServicePath();
+        long totalDiskSize = FileUtils.getDiskSize (indexMsg.getIdxPath ());
+        if (totalDiskSize > indexMsg.getBlockSize () || indexMsg.isLastPiece ()) {
+            
+            IndexWriterFactory.destoryWriters (indexMsg.getIdxPath ());
+            feedBackIndexServicePath = indexMsg.getIdxPath ();
+            feedBackIndexFilePath = indexMsg.getIdxServicePath ();
         } else {
-            feedBackIndexServicePath = indexMsg.getIdxServicePath();
-            feedBackIndexFilePath = indexMsg.getIdxPath();
+            feedBackIndexServicePath = indexMsg.getIdxServicePath ();
+            feedBackIndexFilePath = indexMsg.getIdxPath ();
         }
         
+        MessageHeader messageHeader = new MessageHeader (
+                NettyAction.NETTY_ACTION_INDEX_FEEDBACK);
         
-        MessageHeader messageHeader = new MessageHeader(NettyAction.NETTY_ACTION_INDEX_FEEDBACK);
+        IndexMessage indexFeedbackMsg = new IndexMessage (messageHeader,
+                indexMsg.getDataBody ());
+        indexFeedbackMsg.setBlockSize (indexMsg.getBlockSize ());
+        indexFeedbackMsg.setDiskSize (totalDiskSize);
+        indexFeedbackMsg.setIdxServicePath (feedBackIndexServicePath);
+        indexFeedbackMsg.setIdxPath (feedBackIndexFilePath);
+        indexFeedbackMsg.setIdName (indexMsg.getIdName ());
+        indexFeedbackMsg.setMaxId (currMaxId);
         
-        IndexMessage indexFeedbackMsg = new IndexMessage(messageHeader, indexMsg.getDataBody());
-        indexFeedbackMsg.setBlockSize(indexMsg.getBlockSize());
-        indexFeedbackMsg.setDiskSize(totalDiskSize);
-        indexFeedbackMsg.setIdxServicePath(feedBackIndexServicePath);
-        indexFeedbackMsg.setIdxPath(feedBackIndexFilePath);
-        indexFeedbackMsg.setIdName(indexMsg.getIdName());
-        indexFeedbackMsg.setMaxId(currMaxId);
-        
-        ChannelFuture sendBack=ctx.writeAndFlush(indexFeedbackMsg);
-        
-        if(indexMsg.getMessageHeader().getAction().equals(NettyAction.NETTY_ACTION_MOD)){
-        	IndexSearcherFactory.getInstance().refreshSearchManager(indexMsg.getIdxPath());
-        	logger.info(String.format(LogInfoConstants.INFO_PATTERN_FUNCTION_PROCESS_NO_PARAM,
-                    "IndexServerHandler","refresh searchManager["+indexMsg.getIdxPath()+"]"));
+        logger.info (String.format (
+                LogInfoConstants.INFO_PATTERN_FUNCTION_PROCESS_NO_PARAM,
+                "IndexServerHandler", " send message back "));
+        ChannelFuture sendBack = ctx.writeAndFlush (indexFeedbackMsg);
+        if (sendBack.isDone ()) {
+            ctx.close ();
+        }
+        if (indexMsg.getMessageHeader ().getAction ()
+                .equals (NettyAction.NETTY_ACTION_MOD)) {
+            IndexSearcherFactory.getInstance ().refreshSearchManager (
+                    indexMsg.getIdxPath ());
+            logger.info (String.format (
+                    LogInfoConstants.INFO_PATTERN_FUNCTION_PROCESS_NO_PARAM,
+                    "IndexServerHandler",
+                    "refresh searchManager[" + indexMsg.getIdxPath () + "]"));
         }
         
-        logger.info(String.format(LogInfoConstants.INFO_PATTERN_MESSAGE_RECEIVED_END,
+        logger.info (String.format (
+                LogInfoConstants.INFO_PATTERN_MESSAGE_RECEIVED_END,
                 "IndexServerHandler"));
     }
     
-    
-    
-    private Query existInIndex(ResultRecord currRecord,String idxPath,String queryField) throws Exception{    	
-    	Query result=null;
-		SearcherManager searcherManager = IndexSearcherFactory.getInstance().getSearcherManager(idxPath,false);
-	    IndexSearcher is = null;
-	    is = searcherManager.acquire();
-	    Query query=new TermQuery(new Term(queryField,currRecord.getField(queryField).toString()));
-	    TopDocs sresult=is.search(query, 1);
-	    if(sresult.totalHits>0){
-	    	result=query;
-	    }
-	    searcherManager.release(is);
-	    return result;
+    private Query existInIndex(SearchIndexResultRecord currRecord,
+            String idxPath, String queryField, Meta meta) throws Exception {
+        Query result = null;
+        SearcherManager searcherManager = IndexSearcherFactory.getInstance ()
+                .getSearcherManager (idxPath, false);
+        IndexSearcher is = null;
+        is = searcherManager.acquire ();
+        Query query = new TermQuery (new Term (queryField, currRecord.getField (
+                meta.getFieldIndex (queryField)).toString ()));
+        TopDocs sresult = is.search (query, 1);
+        if (sresult.totalHits > 0) {
+            result = query;
+        }
+        searcherManager.release (is);
+        return result;
     }
     
-   
-
     /*
      * (non-Javadoc)
      * 
@@ -299,12 +328,17 @@ public class IndexServerHandler extends AbstractChannelInboundHandler {
         return null;
     }
     
-    /* (non-Javadoc)
-     * @see com.baidu.rigel.biplatform.tesseract.netty.AbstractChannelInboundHandler#setMessage(com.baidu.rigel.biplatform.tesseract.netty.message.AbstractMessage)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * com.baidu.rigel.biplatform.tesseract.netty.AbstractChannelInboundHandler
+     * #setMessage
+     * (com.baidu.rigel.biplatform.tesseract.netty.message.AbstractMessage)
      */
     @Override
     public <T extends AbstractMessage> void setMessage(T t) {
-        return ; 
+        return;
         
     }
     

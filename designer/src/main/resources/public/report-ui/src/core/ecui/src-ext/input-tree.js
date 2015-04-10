@@ -1,7 +1,7 @@
 /**
  * input tree
  * Copyright 2012 Baidu Inc. All rights reserved.
- * 
+ *
  * path:    input-tree.js
  * desc:    树层级输入框
  * author:  cxl(chenxinle)
@@ -20,6 +20,8 @@
         disposeControl = core.dispose,
         createDom = dom.create,
         addClass = dom.addClass,
+        getElementsByClass = dom.getElementsByClass,
+        previous = dom.previous,
         children = dom.children,
         encodeHTML = string.encodeHTML,
         moveElements = dom.moveElements,
@@ -37,74 +39,74 @@
         UI_INPUT_CONTROL = ui.InputControl,
         UI_INPUT_CONTROL_CLASS = UI_INPUT_CONTROL.prototype;
 
-        var UI_INPUT_TREE = ui.InputTree = 
-        inheritsControl(
-            UI_INPUT_CONTROL,
-            'ui-input-tree',
-            function (el, options) {
-                var type = this.getTypes()[0],
-                    o = createDom();
-                
-                o.innerHTML = '<div class="'+ type +'-layer" ' 
-                    + ' style="position:absolute;display:none; z-index:65535; height:230px; width:250px">'
-                    + '<div class="'
-                    + UI_DATA_TREE.types[0] +'"></div></div>';
+    var UI_INPUT_TREE = ui.InputTree =
+            inheritsControl(
+                UI_INPUT_CONTROL,
+                'ui-input-tree',
+                function (el, options) {
+                    var type = this.getTypes()[0],
+                        o = createDom();
 
-                o = o.firstChild;
+                    o.innerHTML = '<div class="'+ type +'-layer" '
+                        + ' style="position:absolute;display:none; z-index:65535; height:230px; width:250px">'
+                        + '<div class="'
+                        + UI_DATA_TREE.types[0] +'"></div></div>';
 
-                moveElements(el, o.lastChild, true);
-                options._eLayer = document.body.appendChild(o);
-                
-                el.innerHTML = ''
-                    + '<span class="'+ type +'-text"></span>'
-                    + '<span class="'+ type +'-cancel"></span>' 
-                    + '<span class="'+ type +'-button"></span>'
-                    + '<input type="hidden name="'+ (options.name || '') +'" />';
+                    o = o.firstChild;
 
-                options.hidden = true;
-                if (options.value) {
-                    options.value += '';
+                    moveElements(el, o.lastChild, true);
+                    options._eLayer = document.body.appendChild(o);
+
+                    el.innerHTML = ''
+                        + '<span class="'+ type +'-text"></span>'
+                        + '<span class="'+ type +'-cancel"></span>'
+                        + '<span class="'+ type +'-button"></span>'
+                        + '<input type="hidden name="'+ (options.name || '') +'" />';
+
+                    options.hidden = true;
+                    if (options.value) {
+                        options.value += '';
+                    }
+                },
+                function (el, options) {
+                    var childs;
+
+                    if (options.value) {
+                        UI_INPUT_CONTROL_CLASS .setValue.call(this, options.value);
+                    }
+
+                    childs = children(el);
+
+                    this._eText = childs[0];
+                    this._uCancel = $fastCreate(this.Cancel, childs[1], this);
+                    this._uLayer = $fastCreate(this.Layer, options._eLayer, this, {asyn : options.asyn});
+                    options._eLayer = null;
+                    delete options._eLayer;
+
+                    if (options.hideCancel === true) {
+                        this._bHideCancel = true;
+                        this._uCancel.$hide();
+                    }
                 }
-            },
-            function (el, options) {
-                var childs;
-                
-                if (options.value) {
-                    UI_INPUT_CONTROL_CLASS.setValue.call(this, options.value);
-                }
-
-                childs = children(el);
-
-                this._eText = childs[0];
-                this._uCancel = $fastCreate(this.Cancel, childs[1], this);
-                this._uLayer = $fastCreate(this.Layer, options._eLayer, this, {asyn : options.asyn});
-                options._eLayer = null;
-                delete options._eLayer;
-
-                if (options.hideCancel === true) {
-                    this._bHideCancel = true;
-                    this._uCancel.$hide();
-                }
-            }
-        ),
+            ),
 
         UI_INPUT_TREE_CLASS = UI_INPUT_TREE.prototype,
 
-        UI_INPUT_TREE_LAYER = UI_INPUT_TREE_CLASS.Layer = 
-        inheritsControl(
-            UI_CONTROL,
-            'ui-input-tree-layer',
-            null,
-            function (el, options) {
-                el.style.position = 'absolute';
-                // 改为在setData中创建
-                // this._uTree = $fastCreate(this.Tree, el.firstChild, this, {collapsed:true, asyn: options.asyn});
-            }
-        ),
+        UI_INPUT_TREE_LAYER = UI_INPUT_TREE_CLASS.Layer =
+            inheritsControl(
+                UI_CONTROL,
+                'ui-input-tree-layer',
+                null,
+                function (el, options) {
+                    el.style.position = 'absolute';
+                    // 改为在setData中创建
+                    // this._uTree = $fastCreate(this.Tree, el.firstChild, this, {collapsed:true, asyn: options.asyn});
+                }
+            ),
         UI_INPUT_TREE_LAYER_CLASS = UI_INPUT_TREE_LAYER.prototype,
-        
+
         UI_DATA_TREE = ui.DataTree,
-        
+
         UI_INPUT_TREE_CANCEL_CLASS = (UI_INPUT_TREE_CLASS.Cancel = inheritsControl(UI_CONTROL)).prototype,
         UI_INPUT_TREE_LAYER_TREE_CLASS = (UI_INPUT_TREE_LAYER_CLASS.Tree = inheritsControl(UI_DATA_TREE)).prototype;
 
@@ -145,16 +147,16 @@
             if (children.length == 0) {
                 html.push(
                     '<div ecui="value:', encodeHTML(String(node.value)), ';isLeaf:', !!node.isLeaf, '">',
-                         encodeHTML(node.text),
+                    encodeHTML(node.text),
                     '</div>'
                 );
             }
             else {
                 html.push(
                     '<div>',
-                        '<label ecui="value:', encodeHTML(String(node.value)), ';isLeaf:', !!node.isLeaf, '">',
-                             encodeHTML(node.text),
-                        '</label>'
+                    '<label ecui="value:', encodeHTML(String(node.value)), ';isLeaf:', !!node.isLeaf, '">',
+                    encodeHTML(node.text),
+                    '</label>'
                 );
                 for (var i = 0, child; child = children[i]; i ++) {
                     travelTree(child);
@@ -169,23 +171,27 @@
         var o = layer.getBody();
         o.innerHTML = html.join('');
         addClass(o.firstChild, UI_DATA_TREE.types[0]);
-        
+
         layer._uTree = $fastCreate(
-            layer.Tree, 
+            layer.Tree,
             o.firstChild,
-            layer, 
+            layer,
             extend(
-                { 
-                    collapsed: true, 
+                {
+                    collapsed: true,
                     value: String(data.root.value),
                     isLeaf: data.root.isLeaf
-                }, 
+                },
                 options
             )
         );
 
         layer._uTree.init();
-        
+        // 为了适应数据是array的情况
+        var rootChildrenEl = getElementsByClass(this._uLayer._eBody, 'div', 'ui-data-tree-children')[0];
+        var rootEl = previous(rootChildrenEl);
+        addClass(rootEl, 'hide');
+        rootChildrenEl.style.display = 'block';
         if (data.selected != null ) {
             this.setValue(String(data.selected));
         }
@@ -195,7 +201,7 @@
         this._uLayer.show();
     }
     UI_INPUT_TREE_CLASS.getValue = function () {
-    
+
         var text = this._eText.innerHTML;
         var value = this._eInput.value;
         return {
@@ -272,7 +278,7 @@
     /**
      * 根据value获取树中的节点
      * @public
-     * @param {string} value 
+     * @param {string} value
      */
     UI_INPUT_TREE_CLASS.getTreeNodeByValue = function(value) {
         return this._uLayer.getTreeNodeByValue(value);
@@ -301,7 +307,7 @@
         if (node != node.getRoot()) {
             node = node.getParent();
         }
-        
+
         this.setValue(node.getValue());
     }
 
@@ -337,15 +343,15 @@
             view = getView();
             o = pos.top;
             /*
-            if (o + par.getHeight() + this.getHeight() > view.bottom) {
-                if (o - view.top > this.getHeight()) {
-                    pos.top = o - this.getHeight();
-                }
-            }
-            else {
-                pos.top = o + par.getHeight();
-            }
-            */
+             if (o + par.getHeight() + this.getHeight() > view.bottom) {
+             if (o - view.top > this.getHeight()) {
+             pos.top = o - this.getHeight();
+             }
+             }
+             else {
+             pos.top = o + par.getHeight();
+             }
+             */
 
             pos.top = o + par.getHeight();
 
@@ -379,21 +385,22 @@
         superObj.$setText(con.getText());
         UI_INPUT_TREE_FLUSH(superObj);
         this.getParent().hide();
+        triggerEvent(superObj, 'change', null, [con.getValue()]);
     }
 
     UI_INPUT_TREE_LAYER_TREE_CLASS.onexpand = function (item, callback) {
         var superObj = this.getParent().getParent(),
             callback = callback || blank;
-        
+
         var layer =  superObj._uLayer.getOuter(),
             scrollHeight = layer.scrollTop;
         var setScroll = function() {
-           layer.scrollTop = scrollHeight ;
-           layer = null;
+            layer.scrollTop = scrollHeight ;
+            layer = null;
         }
         if (item._bNeedAsyn) {
             triggerEvent(superObj, 'loadtree', null, [item.getValue(), function (data) {
-                item.load(data); 
+                item.load(data);
                 callback.call(null);
                 setScroll();
             }]);
@@ -425,6 +432,6 @@
             delete item.text;
             this.add(text, null, item).init();
         }
-        
+
     }
 })();

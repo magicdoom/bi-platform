@@ -32,6 +32,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.SerializationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -43,6 +44,7 @@ import com.baidu.rigel.biplatform.ac.model.Measure;
 import com.baidu.rigel.biplatform.ac.model.MeasureType;
 import com.baidu.rigel.biplatform.ac.query.data.DataSourceInfo;
 import com.baidu.rigel.biplatform.ac.util.AnswerCoreConstant;
+import com.baidu.rigel.biplatform.cache.StoreManager;
 import com.baidu.rigel.biplatform.tesseract.isservice.index.service.IndexMetaService;
 import com.baidu.rigel.biplatform.tesseract.isservice.meta.DataDescInfo;
 import com.baidu.rigel.biplatform.tesseract.isservice.meta.IndexMeta;
@@ -50,7 +52,6 @@ import com.baidu.rigel.biplatform.tesseract.isservice.meta.IndexShard;
 import com.baidu.rigel.biplatform.tesseract.isservice.meta.IndexState;
 import com.baidu.rigel.biplatform.tesseract.node.meta.Node;
 import com.baidu.rigel.biplatform.tesseract.node.service.IsNodeService;
-import com.baidu.rigel.biplatform.tesseract.store.service.StoreManager;
 import com.baidu.rigel.biplatform.tesseract.store.service.impl.AbstractMetaService;
 import com.baidu.rigel.biplatform.tesseract.util.FileUtils;
 import com.baidu.rigel.biplatform.tesseract.util.IndexFileSystemConstants;
@@ -75,13 +76,16 @@ public class IndexMetaServiceImpl extends AbstractMetaService implements IndexMe
     /**
      * storeManager
      */
-    @Resource(name = "hazelcastStoreManager")
+    @Resource
     private StoreManager storeManager;
     /**
      * isNodeService
      */
     @Resource(name = "isNodeService")
     private IsNodeService isNodeService;
+    
+    @Value("${index.indexInterval}")
+    private int indexInterval;
     
     /**
      * DEFAULT_BLOCK_COUNT，默认每次申请索引块数
@@ -108,6 +112,10 @@ public class IndexMetaServiceImpl extends AbstractMetaService implements IndexMe
          * CUBE_ID
          */
         CUBE_ID, // CUBE的ID
+        /**
+         * INDEX_META_ID
+         */
+        INDEX_META_ID,// indexMetaId
         /**
          * PRODUCT_LINE
          */
@@ -349,6 +357,34 @@ public class IndexMetaServiceImpl extends AbstractMetaService implements IndexMe
         }
         
     }
+    
+    
+    @Override
+	public IndexMeta getIndexMetaByIndexMetaId(String idxMetaId, String storeKey) {
+		if (idxMetaId == null || storeKey == null || idxMetaId.equals("")
+				|| storeKey.equals("")) {
+			LOGGER.info("can not find IndexMeta:[idxMetaId:" + idxMetaId
+					+ "] in Store:[StoreKey:" + storeKey + "]");
+			return null;
+		}
+		IndexMeta result = null;
+		List<IndexMeta> metaList = super.getStoreMetaListByStoreKey(
+				IndexMeta.getDataStoreName(), storeKey);
+
+		if (!CollectionUtils.isEmpty(metaList)) {
+			for (IndexMeta meta : metaList) {
+				if (meta.getIndexMetaId().equals(idxMetaId)) {
+					result = meta;
+					break;
+				}
+			}
+		} else {
+			LOGGER.info("can not find indexMeta for IndexMetaId:[" + idxMetaId
+					+ "]");
+			return null;
+		}
+		return result;
+	}
     
     @Override
     public IndexMeta getIndexMetaByCubeId(String cubeId, String storeKey) {
@@ -605,7 +641,11 @@ public class IndexMetaServiceImpl extends AbstractMetaService implements IndexMe
     public IndexMeta mergeIndexMeta(IndexMeta indexMeta) {
         LOGGER.info(String.format(LogInfoConstants.INFO_PATTERN_FUNCTION_BEGIN, "mergeIndexMeta",
             "[IndexMeta:" + indexMeta + "]"));
-        IndexMeta idxMeta = indexMeta;
+        IndexMeta idxMeta = this.getIndexMetaByIndexMetaId(indexMeta.getIndexMetaId(), indexMeta.getStoreKey());
+        if(idxMeta==null){
+        	idxMeta=indexMeta;
+        }
+        
         if (idxMeta == null || idxMeta.getStoreKey().equals("")) {
             LOGGER.info(String.format(LogInfoConstants.INFO_PATTERN_FUNCTION_EXCEPTION,
                 "mergeIndexMeta", "[IndexMeta:" + indexMeta + "]"));
@@ -657,6 +697,11 @@ public class IndexMetaServiceImpl extends AbstractMetaService implements IndexMe
             }
         }
         
+        
+        if((idxMeta.getLocked().equals(Boolean.FALSE)) || ((System.currentTimeMillis()-idxMeta.getIdxVersion()) > this.indexInterval)){
+        	idxMeta.setLocked(Boolean.FALSE);
+        	
+        }
         // 更新索引元数据
         this.saveOrUpdateIndexMeta(idxMeta);
         
@@ -680,7 +725,8 @@ public class IndexMetaServiceImpl extends AbstractMetaService implements IndexMe
         // 如果当前索引元数据没有索引分片或者已有的分片已满， 分配索引分片
         if (idxMeta.getIdxShardList() == null || idxMeta.getIdxShardList().size() == 0
                 || isIndexShardFull(idxMeta)) {
-            
+        	Map<Node, Integer> assignedNodeMap = new HashMap<Node, Integer>();
+            /*
             // 当前产品线的索引列表
             List<IndexShard> idxShardList = getIndexShardListByProductLine(
                 idxMeta.getProductLine(), idxMeta.getStoreKey());
@@ -699,6 +745,11 @@ public class IndexMetaServiceImpl extends AbstractMetaService implements IndexMe
                 assignedNodeMap = this.isNodeService.assignFreeNodeByNodeList(idxShardNodeList,
                     DEFAULT_BLOCK_COUNT, clusterName);
             }
+            */
+            
+            
+            assignedNodeMap = this.isNodeService.assignFreeNode(DEFAULT_BLOCK_COUNT,
+                    clusterName);
             LOGGER.info(String.format(LogInfoConstants.INFO_PATTERN_FUNCTION_PROCESS_NO_PARAM,
                 "assignIndexShard", "assign node end"));
             

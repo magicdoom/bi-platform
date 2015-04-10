@@ -11,22 +11,45 @@ define([
         'dialog',
         'constant',
         'report/edit/canvas/edit-comp-model',
+        'report/edit/canvas/chart-setting/chart-setting-view',
+        // html模板区域
         'report/edit/canvas/comp-setting-default-template',
         'report/edit/canvas/comp-setting-time-template',
         'report/edit/canvas/comp-setting-liteolap-template',
         'report/edit/canvas/comp-setting-chart-template',
         'report/edit/canvas/vui-setting-select-template',
+        'report/edit/canvas/ecui-input-tree-setting-template',
         'report/edit/canvas/default-selected-time-setting-template',
         'report/edit/canvas/default-selected-range-time-setting-template',
         'report/edit/canvas/data-format-setting-template',
-        'report/edit/canvas/topn-setting-template',
         'report/edit/canvas/comp-relation-event-setting-template',
         'common/float-window',
         'report/edit/canvas/chart-icon-list-template',
         'report/edit/canvas/norm-info-depict-template',
         'report/edit/canvas/filter-blank-line-template'
     ],
-    function (template, dialog, Constant, EditCompModel, compSettingDefaultTemplate, compSettingTimeTemplate, compSettingLITEOLAPTemplate, compSettingChartTemplate, vuiSettingSelectTemplate, defaultSelectedTimeSettingTemplate, defaultSelectedRangeTimeSettingTemplate, dataFormatSettingTemplate, topnSettingTemplate, compRelationEventSettingTemplate, FloatWindow, indMenuTemplate, normInfoDepictTemplate, filterBlankLineTemplate) {
+    function (
+        template,
+        dialog,
+        Constant,
+        EditCompModel,
+        ChartSettingView,
+        // html模板区域
+        compSettingDefaultTemplate,
+        compSettingTimeTemplate,
+        compSettingLITEOLAPTemplate,
+        compSettingChartTemplate,
+        vuiSettingSelectTemplate,
+        ecuiInputTreeSettingTemplate,
+        defaultSelectedTimeSettingTemplate,
+        defaultSelectedRangeTimeSettingTemplate,
+        dataFormatSettingTemplate,
+        compRelationEventSettingTemplate,
+        FloatWindow,
+        indMenuTemplate,
+        normInfoDepictTemplate,
+        filterBlankLineTemplate
+    ) {
 
         return Backbone.View.extend({
             events: {
@@ -34,19 +57,34 @@ define([
                 'click .j-report': 'removeCompEditBar',
                 'click .j-set-default-time': 'openTimeSettingDialog',
                 'click .j-set-data-format': 'getDataFormatList',
-                'click .j-set-topn': 'getTopnList',
                 'click .j-set-relation': 'setCompRelationEvent',
                 'click .j-norm-info-depict': 'getNormInfoDepict',
                 'click .item .j-icon-chart': 'showChartList',
                 'change .select-type': 'selectTypeChange',
                 'change .select-calendar-type': 'selectCalendarTypeChange',
-                'click .j-others-operate': 'getFilterBlankLine'
+                'click .j-others-operate': 'getFilterBlankLine',
+                'change .j-select-setAll': 'changeSelectAll'
             },
 
             //------------------------------------------
             // 设置组件关联关系
             //------------------------------------------
+            /**
+             * 设置单选下拉框默认值
+             *
+             * @param {event} event 事件焦点（单选下拉框多选框）
+             * @public
+             */
+            changeSelectAll: function (event) {
+                var that = this;
+                var $target = $(event.target);
+                var compId = $target.attr('data-comp-id');
+                var checked = $target[0].checked;
+                var allName = $target.attr('value');
 
+                // 设置单选下拉框默认值
+                that.selectSetAll(checked, allName, compId);
+            },
             /**
              * 设置组件关联关系
              *
@@ -329,14 +367,17 @@ define([
                 this.canvasView._component.dispose();
                 // TODO:添加维度为空时，限制
                 // 修改entity中下拉框类型
+                var text = $.trim($target.parent().parent().find('.j-line-x').find('.j-item-text').text()).split('（')[0];
                 for (var i = 0, iLen = entityDefs.length; i < iLen; i++) {
-                    if (
-                        compId === entityDefs[i].compId
+                    if (compId === entityDefs[i].compId
                         &&
-                        (
-                            entityDefs[i].clzKey === 'ECUI_SELECT' || entityDefs[i].clzKey === 'ECUI_MULTI_SELECT'
-                            )
-                        ) {
+                        (entityDefs[i].clzKey === 'ECUI_SELECT'
+                         || entityDefs[i].clzKey === 'ECUI_MULTI_SELECT'
+                        )
+                        && entityDefs[i].dataOpt
+                    ) {
+                        entityDefs[i].dataOpt.textAll = "全部" + text;
+                        entityDefs[i].dataOpt.selectAllText = "全部" + text;
                         entityDefs[i].clzKey = selType;
                     }
                 }
@@ -351,7 +392,7 @@ define([
                     }
                 });
 
-                // 修改reportVm中对应组件div的data-default-value属性
+                // 修改reportVm中对应组件div的data-set-all属性
                 var defaults = this.canvasView.model.$reportVm
                     .find('[data-component-type=SELECT]');
                 var $checkbox = $target.parent().find('.select-default');
@@ -362,10 +403,10 @@ define([
                         $this.attr('data-mold', selType);
                         if (selType == 'ECUI_SELECT') {
                             $checkbox.css('display', 'inline-block');
-                            $(this).attr('data-default-value', $checked[0].checked);
+                            $(this).attr('data-set-all', $checked[0].checked);
                         }
                         else {
-                            $(this).removeAttr('data-default-value');
+                            $(this).removeAttr('data-set-all');
                             $target.parent().find('.select-default').hide();
                         }
                     }
@@ -451,7 +492,7 @@ define([
              * @constructor
              */
             initialize: function (option) {
-                this.model = new EditCompModel({
+                var model = this.model = new EditCompModel({
                     canvasModel: option.canvasView.model,
                     reportId: option.reportId
                 });
@@ -475,7 +516,7 @@ define([
                 var reportCompId = $shell.attr('report-comp-id');
                 var compType = $shell.attr('data-component-type');
                 var compMold = $shell.attr('data-mold');
-                var compAll = $shell.attr('data-default-value');
+                var compAll = $shell.attr('data-set-all');
                 that.model.compId = compId;
                 that.model.compType = compType;
                 that.model.compAll = compAll;
@@ -492,7 +533,8 @@ define([
                     data.reportCompId = reportCompId;
                     compMold && (data.compMold = compMold);
                     var html = template.render(data);
-                    that.$el.find('.j-con-comp-setting').html(html);
+                    var $compSetting = that.$el.find('.j-con-comp-setting');
+                    $compSetting.html(html);
                     that.initLineAccept(compType);
                     $shell.addClass('active').mouseout();
                     // 初始化横轴和纵轴数据项的顺序调整
@@ -500,6 +542,8 @@ define([
 
                     // 调整画布大小
                     that.canvasView.parentView.ueView.setSize();
+
+                    that._initChartSettingView($compSetting[0]);
                 });
             },
 
@@ -524,6 +568,9 @@ define([
                         break;
                     case 'SELECT' :
                         template = vuiSettingSelectTemplate;
+                        break;
+                    case 'SINGLE_DROP_DOWN_TREE':
+                        template = ecuiInputTreeSettingTemplate;
                         break;
 //                    case 'MULTISELECT' :
 //                        template = vuiSettingSelectTemplate;
@@ -621,7 +668,16 @@ define([
                 var $target = $(event.target);
                 // 还原默认值
                 var $seldefault = $target.parent().parent();
+                // 当前控件ID
+                var compId = $seldefault.parent().attr('data-comp-id');
+                // 删除维度初始化单选下拉框默认值
                 if ($seldefault.parent().attr('data-comp-type') == 'SELECT') {
+                    var $allcheck = $seldefault.parent().find('input[class ^= "select-default-value"]');
+                    $allcheck.removeAttr('checked');
+                    var checked = $allcheck[0].checked;
+                    var allName = $allcheck.attr('value');
+                    // 设置单选下拉框默认值
+                    that.selectSetAll(checked, allName, compId);
                     $seldefault.next().find('.select-default-name').text('全部');
                     $seldefault.next().find('.select-default-value').val('全部');
                 }
@@ -770,8 +826,19 @@ define([
                 var $item = $draggedUi.clone().attr('style', '');
                 // 默认值选择
                 var $selectDefault = $('.select-default');
-                var $selectValue = $('.select-default-value');
-                var $selectName = $('.select-default-name');
+                // 单选下拉框添加维度时，初始化默认值设定
+                if (compType === 'SELECT') {
+                    // 获取当前单选下拉框设定默认值元素
+                    var $selectValue = $('input[class ^= "select-default-value"]');
+                    $selectValue.removeAttr('checked');
+                    var $selectName = $('.select-default-name');
+                    // 当前单选下拉框默认值判定变量
+                    var checked = $selectValue[0].checked;
+                    // 当前单选下拉框默认值
+                    var allName = $selectValue.attr('value');
+                    // 设置单选下拉框默认值
+                    that.selectSetAll(checked, allName, compId);
+                }
                 if (compType === 'SELECT' && $('.data-axis-line .item').length >= 1) {
                     alert('只能拖一个维度或者维度组');
                     return;
@@ -821,10 +888,9 @@ define([
                     if (compType == 'SELECT') {
                         if ($selectDefault.is(':visible')) {
                             var all = $selectName.text();
-                            var dimname = $acceptUi.find('span').eq(1).text().split('（')[0];;
-                            $selectValue.val(all + '（' + dimname + ' ）');
-                            $selectName.text(all + '（' + dimname + ' ）');
-                            console.log('显示');
+                            var dimname = $acceptUi.find('span').eq(1).text().split('（')[0];
+                            $selectValue.val(all + dimname);
+                            $selectName.text(all + dimname);
                         }
                     }
                     // 刷新报表展示
@@ -1029,10 +1095,48 @@ define([
              */
             afterAddSelectCompAxis: function (option) {
                 var compId = this.getActiveCompId();
-                var editCompModel = this.canvasView.editCompView.model;
-                var json = editCompModel.getCompDataById(compId)[0];
                 var id = option.$item.attr('data-id');
-                json.dimId = id;
+                var editCompModel = this.canvasView.editCompView.model;
+                var entityDefs = editCompModel.canvasModel.reportJson.entityDefs;
+                var text = $.trim(option.$item.find('.j-item-text').text().split('（')[0]);
+
+                for (var i = 0, len = entityDefs.length; i < len; i++) {
+                    if (entityDefs[i].compId == compId
+                        &&
+                        (entityDefs[i].clzKey === 'ECUI_MULTI_SELECT'
+                         || entityDefs[i].clzKey === 'ECUI_SELECT'
+                        )
+                        && entityDefs[i].dataOpt
+                    ) {
+                        entityDefs[i].dimId = id;
+                        entityDefs[i].dataOpt.textAll = "全部" + text;
+                        entityDefs[i].dataOpt.selectAllText = "全部" + text;
+                    }
+                }
+                this.model.canvasModel.saveJsonVm();
+            },
+            /**
+             * 添加完成数据项之后要做的特殊dom处理-下拉树
+             *
+             * @param {Object} option 配置参数
+             * @param {string} option.compType 组件类型
+             * @param {string} option.oLapElemenType 数据项类型
+             * @param {string} option.oLapElemenId 数据项id
+             * @param {string} option.axisType 轴类型
+             * @param {$HTMLElement} option.$item 数据项dom
+             * @public
+             */
+            afterAddSingleDropDownTreeCompAxis: function (option) {
+                var compId = this.getActiveCompId();
+                var id = option.$item.attr('data-id');
+                var editCompModel = this.canvasView.editCompView.model;
+                var entityDefs = editCompModel.canvasModel.reportJson.entityDefs;
+
+                for (var i = 0, len = entityDefs.length; i < len; i++) {
+                    if (entityDefs[i].compId == compId) {
+                        entityDefs[i].dimId = id;
+                    }
+                }
                 this.model.canvasModel.saveJsonVm();
             },
             /**
@@ -1105,6 +1209,10 @@ define([
                         break;
                     case 'TABLE':
                         newType = 'Table';
+                        break;
+                    case 'SINGLE_DROP_DOWN_TREE':
+                        newType = 'SingleDropDownTree';
+                        break;
                 }
                 return newType;
             },
@@ -1272,8 +1380,16 @@ define([
                                     var rangeEnd = $this.find('[name="endDateSetting"]').val();
                                     // 如果设置range时间时，rangeend如果大于rangestart则不能设置。
                                     if (rangeStart !== undefined && rangeEnd !== undefined) {
-                                        if (rangeEnd < rangeStart) {
+                                        if (parseInt(rangeEnd) < parseInt(rangeStart)) {
                                             dialog.alert("设置的默认结束时间应小于默认开始时间");
+                                            return;
+                                        }
+                                    }
+                                    // 如果设置single时间时，则不能设置。
+                                    var singleDateSetting = $this.find('[name="singleDateSetting"]').val();
+                                    if (singleDateSetting !== undefined) {
+                                        if (parseInt(singleDateSetting) > 0) {
+                                            dialog.alert("设置的默认的时间点应为负数");
                                             return;
                                         }
                                     }
@@ -1368,72 +1484,6 @@ define([
                         //console.log(data[name]);
                     });
                     that.model.saveDataFormatInfo(compId, data, function () {
-                        $dialog.dialog('close');
-                        that.canvasView.showReport();
-                    });
-                }
-            },
-
-            /**
-             * 获取topn数据信息
-             *
-             * @param {event} event 点击事件
-             * @public
-             */
-            getTopnList: function (event) {
-                var that = this;
-                var compId = that.getActiveCompId();
-
-                that.model.getTopnList(compId, openTopnDialog);
-                function openTopnDialog(data) {
-                    var html;
-                    if (!data.indList) {
-                        dialog.alert('没有指标');
-                        return;
-                    }
-                    html = topnSettingTemplate.render(
-                        data
-                    );
-                    dialog.showDialog({
-                        title: 'topn设置',
-                        content: html,
-                        dialog: {
-                            width: 340,
-                            height: 300,
-                            resizable: false,
-                            buttons: [
-                                {
-                                    text: '提交',
-                                    click: function () {
-                                        saveTopnFormInfo($(this));
-                                    }
-                                },
-                                {
-                                    text: '取消',
-                                    click: function () {
-                                        $(this).dialog('close');
-                                    }
-                                }
-                            ]
-                        }
-                    });
-                }
-
-                /**
-                 * 保存数据格式
-                 */
-                function saveTopnFormInfo($dialog) {
-                    var selects = $('.topn-indlist').find('select');
-                    var $input = $('.topn-indlist').find('input');
-                    var data = {};
-
-                    selects.each(function () {
-                        var $this = $(this);
-                        var name = $this.attr('name');
-                        data[name] = $this.val();
-                    });
-                    data[$input.attr('name')] = $input.val();
-                    that.model.saveTopnInfo(compId, data, function () {
                         $dialog.dialog('close');
                         that.canvasView.showReport();
                     });
@@ -1590,6 +1640,55 @@ define([
             getActiveReportCompId: function () {
                 var $compSetting = this.$conCompSetting.find('.j-comp-setting');
                 return $compSetting.attr('report-comp-id');
+            },
+            /**
+             * 下拉卡框添加默认值公共函数
+             *
+             * @param {string} checked 默认值判断条件
+             * @param {string} allName 当前默认值
+             * @param {number} compId 当前控件ID
+             * @public
+             */
+            selectSetAll: function (checked, allName, compId) {
+                var selects = this.canvasView.model.$reportVm
+                    .find('[data-component-type=SELECT]');
+                selects.each(function () {
+                    var $this = $(this);
+                    if ($this.attr('data-comp-id') === compId) {
+                        $this.attr('data-set-all', checked);
+                    }
+                });
+                // TODO:在entityDef属性中加入新的属性，或者干掉
+                var entityDefs = this.model.canvasModel.reportJson.entityDefs;
+                var entityDef;
+                for (var i = 0, iLen = entityDefs.length; i < iLen; i ++) {
+                    if (entityDefs[i].clzType === 'VUI' && entityDefs[i].compId === compId) {
+                        entityDef = entityDefs[i];
+                        entityDef.hasAllNode = checked;
+                        entityDef.hasAllNodeText = allName;
+                        break;
+                    }
+                }
+                // 保存vm与json，保存成功后展示报表
+                this.model.canvasModel.saveJsonVm(
+//                    this.canvasView.showReport.call(this.canvasView)
+                );
+            },
+            /**
+             * 下拉卡框添加默认值公共函数
+             *
+             * @param {HTMLEelement} 图形编辑区的dom元素
+             * @private
+             */
+            _initChartSettingView: function (el) {
+                if(this.chartSettingView) {
+                    this.chartSettingView.destroy();
+                }
+                this.chartSettingView = new ChartSettingView({
+                    el: el,
+                    reportId: this.model.reportId,
+                    canvasView: this.canvasView
+                });
             }
         });
 

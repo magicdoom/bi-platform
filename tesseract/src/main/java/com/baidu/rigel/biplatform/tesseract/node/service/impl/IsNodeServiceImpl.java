@@ -114,7 +114,7 @@ public class IsNodeServiceImpl extends AbstractMetaService implements IsNodeServ
         Map<Node, Integer> result = new HashMap<Node, Integer>();
         sortNodeListByFreeBlockCount(existNodeList);
         int blockCountLeft = blockCount;
-        for (int i = existNodeList.size() - 1; (i >= 0 && blockCountLeft > 0); i--) {
+        for (int i = 0; (i < existNodeList.size() && blockCountLeft > 0); i++) {
             if (existNodeList.get(i).getFreeBlockNum() > 0
                     && existNodeList.get(i).getNodeState().equals(NodeState.NODE_AVAILABLE)) {
                 Node currNode = existNodeList.get(i);
@@ -122,7 +122,9 @@ public class IsNodeServiceImpl extends AbstractMetaService implements IsNodeServ
                     : currNode.getFreeBlockNum();
                 // 记录当前索引块使用情况
                 currNode.setCurrBlockUsed(currNode.getCurrBlockUsed() + currBlockCount);
+                
                 result.put(currNode, currBlockCount);
+                this.saveOrUpdateNodeInfo(currNode);
                 blockCountLeft = blockCountLeft - currBlockCount;
                 
             }
@@ -414,14 +416,16 @@ public class IsNodeServiceImpl extends AbstractMetaService implements IsNodeServ
             "markClusterBadNode", "[no param]"));
         Node currNode=this.getCurrentNode();
         List<Node> nodeList = this.getNodeListByClusterName(currNode.getClusterName());
-        long currTime = System.currentTimeMillis();
         if (nodeList != null) {
             for (Node curr : nodeList) {
+                long currTime = System.currentTimeMillis();
                 if (curr.getNodeState().equals(NodeState.NODE_AVAILABLE)
                         && ((currTime - curr.getLastStateUpdateTime()) > this.nodeStateUpdateMaxIntervalTime)) {
-                	curr.setNodeState(NodeState.NODE_UNAVAILABLE);
-                	curr.setLastStateUpdateTime(currTime);
+                    curr.setNodeState(NodeState.NODE_UNAVAILABLE);
+                    curr.setLastStateUpdateTime(currTime);
                     this.saveOrUpdateNodeInfo(curr);
+                    LOGGER.warn(String.format(LogInfoConstants.INFO_PATTERN_FUNCTION_PROCESS_NO_PARAM, "markClusterBadNode",
+                            "[mark: "+curr.getNodeKey()+" as bad node]"));
                 }
             }
         }

@@ -206,9 +206,11 @@
 }
 .shell-component .con-edit-btns {
     white-space: nowrap;
-    width: 100%;
-    padding-top: 22px;
+    /*width: 100%;*/
     overflow: hidden;
+    position: absolute;
+    top: 0;
+    right: 0;
 }
 .con-edit-btns .fold {
     cursor: pointer;
@@ -581,7 +583,6 @@
 /**
  * @name                      :数据格式设置
  * @author                    :lizhantong
- * @email                     :lztlovely@126.com
  * @version                   :1.0
  * @type                      :扩展类
  * @explain                   :数据格式设置模块
@@ -632,6 +633,45 @@
 /*@end*/
 
 /**
+ * @name                      :图形指标颜色设置
+ * @author                    :lizhantong
+ * @version                   :1.0
+ * @type                      :扩展类
+ * @explain                   :数据格式设置模块
+ * @relating                  :暂无
+ * @dependent                 :暂无
+ */
+.ind-color {
+    width: 300px;
+}
+.ind-color .ind-color-alone {
+    padding: 10px 10px;
+}
+.ind-color-alone > span {
+    float: left;
+    width: 100%;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+.ind-color-alone .ind-color-alone-ind {
+    float: left;
+    margin-top: 10px;
+}
+.ind-color-alone-ind > span {
+    width: 110px;
+    float: left;
+    text-align: right;
+    line-height: 25px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+.ind-color-alone-ind > input {
+    float: left;
+}
+/*@end*/
+
+/**
  * @name                      :topn设置
  * @author                    :lizhantong
  * @email                     :lztlovely@126.com
@@ -665,6 +705,35 @@
     width : 100px;
     height: 15px;
 }
+/*@end*/
+
+/**
+ * @name                      :双坐标轴设置
+ * @author                    :weiboxue
+ * @email                     :wbx_901118@sina.com
+ * @version                   :1.0
+ * @type                      :扩展类
+ * @explain                   :暂无
+ * @relating                  :暂无
+ * @dependent                 :暂无
+ */
+.axis-setting {
+    display: block;
+    margin-top: 15px;
+    padding: 0 10px 0 10px;
+    font-size: 12px;
+    font-family: '微软雅黑';
+}
+.axis-setting-dim div {
+    display: inline-block;
+    margin-left: 5px;
+    margin-top: 10px;
+    height: 20px;
+}
+.axis-setting-checkbox {
+    vertical-align: bottom;
+}
+
 /*@end*/
 
 /**
@@ -815,5 +884,49 @@
 .shell-component .con-edit-btns span{
     /*border: 1px solid rgba(0, 119, 119, 0.17);*/
     display: none;
+    float: left;
+}
+/* 修改报表名称区域展示框样式 */
+.reportName {
+    height: 20px;
+    margin: 5px 0;
+    background: #e4e4e4;
     float: right;
+    font-size: 14px;
+    width: 150px;
+}
+/* 修改报表名称输入框样式 */
+.reportSetName {
+    height: 20px;
+    margin: 5px 0;
+    background: #e4e4e4;
+    float: right;
+    display: none;
+    border: 0 solid #e4e4e4;
+    font-size: 14px;
+    width: 150px;
+}
+.save-reportNameBox {
+    width: 90%;
+    margin: 0 auto;
+    margin-top: 20px;
+}
+.save-reportSetName {
+    height: 20px;
+    margin: 5px 0;
+    background: #e4e4e4;
+    float: right;
+    border: 0 solid #e4e4e4;
+    font-size: 14px;
+    width: 150px;
+}
+/* 修改报表名称输入框样式 */
+.save-reportSetName {
+    height: 100%;
+    margin: 5px 0;
+    background: #FFF;
+    float: right;
+    border: 1px solid rgb(238, 238, 238);
+    font-size: 14px;
+    width: 100%;
 }

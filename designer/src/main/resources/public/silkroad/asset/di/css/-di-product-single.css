@@ -20,14 +20,24 @@
     border-radius: 2px;
     *display: inline;
     *zoom: 1;
+    text-align: center;
 }
-.ui-button {
-    /*background: url(img/icon.png) 0px -103px repeat-x;*/
-    /*border:  1px solid #7FAFC7;*/
-    background: #2584DA;
-    border: 1px solid #2070BB;
-    color: white;
-    width: 96%;
+.ui-normal-btn {
+    color: #fff;
+    padding: 0 20px;
+    background: #00aef3;
+    border: 1px solid #00aef3;
+    -moz-border-radius: 3px;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    text-align: center;
+}
+.ui-normal-btn .ui-button-text {
+    height: 30px;
+    line-height: 30px;
+    width: 24px;
+    display: block;
+    font-size: 12px;
 }
 .ui-button-hover {
     /*background-position: 0px -127px;*/
@@ -43,6 +53,7 @@
     background: #2584DA;
     border: 1px solid #2070BB;
     color: white;
+    width: 55px;
 }
 .ui-button-g-hover {
     background-position: 0px -79px;
@@ -223,7 +234,7 @@
     background-color: rgba(255, 255, 255, 0);
 }
 .ui-download-btn .ui-button-inner {
-    padding: 2px 0px 4px 3px;
+    padding: 0;
     line-height: 8px;
     -webkit-border-radius: 1px;
     -o-border-radius: 1px;
@@ -275,6 +286,10 @@
     border-top: 1px solid #F0F0F0;
     cursor: default;
     font-size: 12px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 .ui-select-button {
     background: url(img/icon2.png) -16px -64px no-repeat;
@@ -330,6 +345,10 @@
     line-height: 18px;
     border-top: 1px solid #F0F0F0;
     cursor: default;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
 }
 .ui-multi-select-button {
     background: url(img/icon2.png) -16px -64px no-repeat;
@@ -384,6 +403,11 @@
 .ui-multi-select-item-hover,
 .ui-multi-select-item-focus {
     background: #E4EAFA;
+}
+
+.ui-multi-select-selectall {
+    background: white;
+    z-index: 99
 }
 
 /**
@@ -1079,7 +1103,7 @@ div.ui-float-menu-children div.ui-float-menu-children div.ui-float-menu {
     font-weight: bold;
 }
 .ui-form-close {
-    display: block;
+    display: none;
     width: 11px;
     height: 11px;
     top: 9px;
@@ -1097,6 +1121,13 @@ div.ui-float-menu-children div.ui-float-menu-children div.ui-float-menu {
 .ui-form-inner {
     background-color: #FFF;
     padding: 10px;
+}
+.ui-messagebox-bottom .ui-button-g:hover {
+    background: #2584DA;
+    color: #FFF
+}
+.ui-messagebox-bottom .ui-form-close {
+    display: none;
 }
 /**
  * 单选
@@ -1972,10 +2003,16 @@ div.ui-float-menu-children div.ui-float-menu-children div.ui-float-menu {
 .ui-table-head {
     border: 1px solid #E6E6E6;
     height: 30px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
     user-select: none;
 }
 .ui-table-locked-head {
-    border: 1px solid #E6E6E6;
+    border-right: 1px solid #E6E6E6;
+    border-bottom: 1px solid #E6E6E6;
+    border-left: 2px solid #E6E6E6;
+    border-top: 1px solid #E6E6E6;
     height: 30px;
     overflow: hidden;
 }
@@ -2105,6 +2142,9 @@ div.ui-float-menu-children div.ui-float-menu-children div.ui-float-menu {
     background-position: -25px -151px;
     display: block;
 }
+.ui-table-default-icon {
+    padding-left: 9px;
+}
 /* 表格纵向滚动条 */
 .ui-table .ui-vscrollbar {
     width: 16px;
@@ -2224,6 +2264,7 @@ div.ui-float-menu-children div.ui-float-menu-children div.ui-float-menu {
     line-height: 15px;
     color: #FFF;
     display: inline-block;
+    background: url("img/icon_help_none.png");
 }
 .ui-table-head-drag {
     position: absolute;
@@ -2290,12 +2331,25 @@ div.ui-float-menu-children div.ui-float-menu-children div.ui-float-menu {
     width: 10px;
     height: 100%;
 }
-.ui-table-dot-line {
+.ui-table-drag-box {
     position: absolute;
-    width: 1px;
-    border-right: 2px dashed #ccc;
-    display: none;
+    width: 10px;
+    height: 100%;
     cursor: col-resize;
+}
+.ui-table-dot-box-drag {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 9px;
+    height: 100%;
+    display: none;
+}
+.ui-table-dot-box-line {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    border-right: 1px dashed #CCCCCC;
 }
 
 .ui-table-expand-background {
@@ -2704,7 +2758,7 @@ div.ui-float-menu-children div.ui-float-menu-children div.ui-float-menu {
 .ui-input-tree {
     position: relative;
     display: inline-block;
-    width: 160px;
+    width: 200px;
     height: 20px;
     border: 1px solid #A9ADB6;
     background-color: #FFF;
@@ -3035,7 +3089,6 @@ li {
     font-size: 12px;
 }
 
-
 .xui-e-chart {
     width: 100%;
     height: 100%;
@@ -3045,8 +3098,10 @@ li {
     z-index:0;
 }
 .xui-e-chart-header {
-    width: 100%;
-    height: 25px;
+    position: absolute;
+    top: 14px;
+    left: 18px;
+    z-index: 999;
 }
 .xui-e-chart-title {
     font-weight:bold;
@@ -3083,7 +3138,7 @@ li {
     background-position:-42px -385px;
 }
 .xui-e-chart-content {
-    height:80%;
+    height:100%;
 }
 .xui-e-chart-empty {
     width: 99%;
@@ -3123,24 +3178,22 @@ li {
 }
 .echarts-candidate {
     float: left;
-    margin-left: 5px;
 }
 .echarts-candidate label {
     float: left;
     margin-top: 5px;
-    padding-left: 5px;
-    padding-bottom: 10px;
+    margin-right: 8px;
     height: 15px;
     line-height: 15px;
+    cursor: pointer;
 }
 .echarts-candidate input {
     float: left;
     margin-top: 5px;
-    padding-left: 5px;
-    padding-bottom: 10px;
     height: 15px;
     line-height: 15px;
     width: 20px;
+    cursor: pointer;
 }
 
 /**
@@ -3205,7 +3258,7 @@ li {
  */
 .di-o_o-block {
     position: relative;
-    margin: 0 10px 20px 0;
+    /*margin: 0 10px 20px 0;*/
     border-radius: 3px;
 }
 .di-o_o-line {
@@ -3737,7 +3790,7 @@ div.di-dim-level-find-msg span{
 .di-table-prompt {
     font-size: 12px;
     color: #888;
-    padding: 6px 0px 10px 10px;
+    padding: 3px 0px 0px 10px;
     overflow: hidden;
     line-height: 18px;
 }
@@ -3758,6 +3811,17 @@ div.di-dim-level-find-msg span{
     line-height: 18px;            
     vertical-align: middle;
 }
+.di-table-down {
+    width: 140px;
+    float: left;
+}
+.di-table-down-text {
+    float: left;
+    width: 100px;
+}
+.di-table-down-btn {
+    float: left;
+}
 /**
  * @name                      :roport-ui针对silkroad所做的的css适配
  * @author                    :lizhantong
@@ -3771,7 +3835,7 @@ div.di-dim-level-find-msg span{
 
 .comp-box {
     width: 100%;
-    height: 90%;
+    height: 100%;
     overflow: auto;
 }
 .hide {
@@ -4602,10 +4666,12 @@ button.skin-link-button:hover {
 }
 .esui-ui-monthview-head .esui-ui-monthview-month-forward,
 .esui-ui-monthview-head .esui-ui-monthview-month-back {
+    background-image: url(img/esesui-ui.png);
     background-repeat: repeat;
     background-position: 0px -200px;
     background-color: transparent;
     font-size: 1px;
+    width: 20px;
     height: 20px;
     padding: 0;
     float: left;
@@ -4886,10 +4952,10 @@ button.skin-link-button:hover {
 .esui-ui-rangecalendar {
     border: 1px solid #a9adb6;
     /*border:1px solid #dde0e9;*/
-    width: 235px;
+    width: 200px;
     height: 23px;
     line-height: 23px;
-    padding-left: 8px;
+    padding-left: 6px;
     font-size: 12px;
     cursor: pointer;
     background-color: white;
@@ -5545,6 +5611,7 @@ button.skin-link-button:hover {
     position: absolute;
     text-align: left;
     z-index: 1002;
+    min-width: 58px ! important;
 }
 .esui-ui-select-item {
     color: #333333;

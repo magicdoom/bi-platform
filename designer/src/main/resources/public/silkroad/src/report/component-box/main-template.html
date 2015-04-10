@@ -9,7 +9,7 @@
     {{each componentList as group}}
     <div class="con-component j-con-component" data-group-id="{{group.id}}">
         {{each group.items as item}}
-        <div class="component-item {{item.iconClass}} j-component-item" data-component-type="{{item.type}}" data-mold="{{item.mold}}" data-default-value="{{item.defaultValue}}">
+        <div class="component-item {{item.iconClass}} j-component-item" data-component-type="{{item.type}}" data-mold="{{item.mold}}" data-set-all="{{item.defaultValue}}">
             <img src="src/css/img/global-menu/comp-menu-{{item.iconClass}}.png"/>
             {{item.caption}}
         </div>

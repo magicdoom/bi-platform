@@ -17,7 +17,7 @@ package com.baidu.rigel.biplatform.tesseract.isservice.search.service;
 
 import com.baidu.rigel.biplatform.tesseract.isservice.exception.IndexAndSearchException;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryRequest;
-import com.baidu.rigel.biplatform.tesseract.resultset.TesseractResultSet;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchIndexResultSet;
 
 /**
  * 
@@ -34,6 +34,6 @@ public interface SearchService {
      * @return TesseractResultSet 返回TesseractResultSet数据接口
      * @throws IndexAndSearchException 可能抛出的异常
      */
-    TesseractResultSet query(QueryRequest query) throws IndexAndSearchException ;
+    SearchIndexResultSet query(QueryRequest query) throws IndexAndSearchException ;
     
 }

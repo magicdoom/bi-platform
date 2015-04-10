@@ -139,6 +139,21 @@ public class MetaNameUtil {
         // 先按照].[去截取，以后考虑更好方法
         return StringUtils.split(uniqueName, "].[");
     }
+    
+    
+    /** 
+     * getNameFromMetaName 从元数据名称中获取名称信息
+     * @param metaName
+     * @return
+     */
+    public static String getNameFromMetaName(String metaName) {
+        if(isUniqueName(metaName)) {
+            String[] nameArr = parseUnique2NameArray(metaName);
+            return nameArr[nameArr.length - 1];
+        } else {
+            return metaName;
+        }
+    }
 
     /**
      * 判断一个UniqueName是否是一个all节点的UniqueName

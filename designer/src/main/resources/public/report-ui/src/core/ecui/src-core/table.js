@@ -347,7 +347,7 @@ _aElements   - 行的列Element对象，如果当前列需要向左合并为null
      * 表格控件改变显示区域时，每次尽量移动一个完整的行或列的距离。
      * @private
      *
-     * @param {number} value 控件的当前值
+     * @param {number} value 控件的当前值f
      */
     function UI_TABLE_SCROLL_SETVALUE(value) {
         //__gzip_original__length
@@ -789,6 +789,7 @@ _aElements   - 行的列Element对象，如果当前列需要向左合并为null
 
         this.getMain().style.paddingTop = this.$$paddingTop + 'px';
         first(body).style.width = this._uHead.getMain().lastChild.lastChild.style.width = mainWidth + 'px';
+        console.log(this._uHead.getMain().lastChild.lastChild);
 
         // 计算控件的宽度与高度自动扩展
         if (mainWidth <= bodyWidth && mainHeight <= bodyHeight) {

@@ -19,7 +19,6 @@
 package com.baidu.rigel.biplatform.tesseract.isservice.search.service.impl;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -47,7 +46,6 @@ import com.baidu.rigel.biplatform.tesseract.isservice.meta.IndexMeta;
 import com.baidu.rigel.biplatform.tesseract.isservice.meta.IndexShard;
 import com.baidu.rigel.biplatform.tesseract.isservice.meta.IndexState;
 import com.baidu.rigel.biplatform.tesseract.isservice.meta.SqlQuery;
-import com.baidu.rigel.biplatform.tesseract.isservice.search.agg.AggregateCompute;
 import com.baidu.rigel.biplatform.tesseract.isservice.search.service.SearchService;
 import com.baidu.rigel.biplatform.tesseract.node.meta.Node;
 import com.baidu.rigel.biplatform.tesseract.node.service.IndexAndSearchClient;
@@ -55,9 +53,7 @@ import com.baidu.rigel.biplatform.tesseract.node.service.IsNodeService;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.Expression;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryMeasure;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryRequest;
-import com.baidu.rigel.biplatform.tesseract.resultset.TesseractResultSet;
-import com.baidu.rigel.biplatform.tesseract.resultset.isservice.ResultRecord;
-import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchResultSet;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchIndexResultSet;
 import com.baidu.rigel.biplatform.tesseract.util.QueryRequestUtil;
 import com.baidu.rigel.biplatform.tesseract.util.TesseractExceptionUtils;
 import com.baidu.rigel.biplatform.tesseract.util.isservice.LogInfoConstants;
@@ -104,8 +100,6 @@ public class SearchIndexServiceImpl implements SearchService {
     private TaskExecutor taskExecutor;
     
     
-    private ExecutorCompletionService<TesseractResultSet> completionService;
-
     /**
      * Constructor by no param
      */
@@ -121,10 +115,8 @@ public class SearchIndexServiceImpl implements SearchService {
      * (com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryRequest)
      */
     @Override
-    public TesseractResultSet query(QueryRequest query) throws IndexAndSearchException {
-    	if(completionService == null) {
-            completionService = new ExecutorCompletionService<>(taskExecutor);
-        }
+    public SearchIndexResultSet query(QueryRequest query) throws IndexAndSearchException {
+        ExecutorCompletionService<SearchIndexResultSet> completionService = new ExecutorCompletionService<>(taskExecutor);
         LOGGER.info(String.format(LogInfoConstants.INFO_PATTERN_FUNCTION_BEGIN, "query", "[query:" + query + "]"));
         // 1. Does all the existed index cover this query
         // 2. get index meta and index shard
@@ -146,7 +138,7 @@ public class SearchIndexServiceImpl implements SearchService {
                 this.idxMetaService.getIndexMetaByCubeId(query.getCubeId(), query.getDataSourceInfo()
                         .getDataSourceKey());
 
-        TesseractResultSet result = null;
+        SearchIndexResultSet result = null;
         long current = System.currentTimeMillis();
         if (idxMeta == null
                 || idxMeta.getIdxState().equals(IndexState.INDEX_UNAVAILABLE)
@@ -182,7 +174,7 @@ public class SearchIndexServiceImpl implements SearchService {
                 }
                 
             }
-            TesseractResultSet currResult =
+            SearchIndexResultSet currResult =
                     this.dataQueryService.queryForListWithSQLQueryAndGroupBy(sqlQuery, dataSourceWrape, limitStart,
                             limitSize, query);
             LOGGER.info(String.format(LogInfoConstants.INFO_PATTERN_FUNCTION_PROCESS_NO_PARAM, "query", "db return "
@@ -194,19 +186,24 @@ public class SearchIndexServiceImpl implements SearchService {
             LOGGER.info("cost :" + (System.currentTimeMillis() - current) + " before prepare get record.");
             current = System.currentTimeMillis();
 
-            List<TesseractResultSet> idxShardResultSetList = new ArrayList<TesseractResultSet>();
+            List<SearchIndexResultSet> idxShardResultSetList = new ArrayList<SearchIndexResultSet>();
             for (IndexShard idxShard : idxMeta.getIdxShardList()) {
-                this.completionService.submit(new Callable<TesseractResultSet>() {
+            	
+            	if(idxShard.getIdxState().equals(IndexState.INDEX_UNINIT)){
+            		continue;
+            	}
+            	
+                completionService.submit(new Callable<SearchIndexResultSet>() {
                     
                     @Override
-                    public TesseractResultSet call() throws Exception {
+                    public SearchIndexResultSet call() throws Exception {
                         try {
                             long current = System.currentTimeMillis();
                             Node searchNode = isNodeService.getFreeSearchNodeByIndexShard(idxShard,idxMeta.getClusterName());
                             searchNode.searchRequestCountAdd();
                             isNodeService.saveOrUpdateNodeInfo(searchNode);
                             LOGGER.info("begin search in shard:{}", idxShard);
-                            TesseractResultSet result = (TesseractResultSet) isClient.search(query, idxShard, searchNode).getMessageBody();
+                            SearchIndexResultSet result = (SearchIndexResultSet) isClient.search(query, idxShard, searchNode).getMessageBody();
                             searchNode.searchrequestCountSub();
                             isNodeService.saveOrUpdateNodeInfo(searchNode);
                             LOGGER.info("compelete search in shard:{},take:{} ms",idxShard, System.currentTimeMillis() - current);
@@ -258,15 +255,16 @@ public class SearchIndexServiceImpl implements SearchService {
      * @param resultList 要合并的TesseractResultSet集合
      * @return TesseractResultSet
      */
-    private TesseractResultSet mergeResultSet(List<TesseractResultSet> resultList, QueryRequest query) {
-        TesseractResultSet result = null;
-        LinkedList<ResultRecord> resultQ = new LinkedList<ResultRecord>();
-        for (TesseractResultSet tr : resultList) {
-            SearchResultSet sr = (SearchResultSet) tr;
-            resultQ.addAll(sr.getResultQ());
+    private SearchIndexResultSet mergeResultSet(List<SearchIndexResultSet> resultList, QueryRequest query) {
+        int totalSize = 0;
+        for (SearchIndexResultSet tr : resultList) {
+            totalSize += tr.size();
         }
-
-        result = new SearchResultSet(AggregateCompute.aggregate(resultQ, query));
+        
+        SearchIndexResultSet result = new SearchIndexResultSet(resultList.get(0).getMeta(), totalSize);
+        resultList.forEach(set -> {
+            result.getDataList().addAll(set.getDataList()); 
+        });
         return result;
 
     }

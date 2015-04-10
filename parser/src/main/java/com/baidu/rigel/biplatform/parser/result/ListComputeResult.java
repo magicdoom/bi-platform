@@ -20,6 +20,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
+
 
 
 /** 
@@ -61,12 +63,22 @@ public class ListComputeResult extends AbstractResult<List<BigDecimal>> {
         }
         ListComputeResult result = new ListComputeResult();
         if (trsan.getResultType().equals(ResultType.LIST)) {
-            if (result.getData().size() < size) {
-                for(int i = result.getData().size(); i < size; i++) {
-                    result.getData().add(null);
+            ListComputeResult ori = (ListComputeResult) trsan;
+            
+            if(CollectionUtils.isNotEmpty(ori.getData())) {
+                int oriSize = ori.getData().size();
+                if (oriSize == size) {
+                    return ori;
+                } else if (oriSize < size) {
+                    result.getData().addAll(ori.getData());
+                    for(int i = oriSize; i < size; i++) {
+                        result.getData().add(null);
+                    }
+                } else {
+                    for(int i = oriSize; i < size; i++) {
+                        result.getData().add(ori.getData().get(i));
+                    }
                 }
-            }else {
-                result.setData(result.getData().subList(0, size));
             }
         } else {
             BigDecimal data = ((SingleComputeResult)trsan).getData();

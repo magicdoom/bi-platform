@@ -17,6 +17,8 @@ package com.baidu.rigel.biplatform.ma.resource.utils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,9 +29,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.util.CollectionUtils;
 
+import com.baidu.rigel.biplatform.ac.model.Cube;
+import com.baidu.rigel.biplatform.ac.model.Dimension;
 import com.baidu.rigel.biplatform.ac.query.data.DataModel;
 import com.baidu.rigel.biplatform.ac.query.data.HeadField;
 import com.baidu.rigel.biplatform.ac.util.DeepcopyUtils;
+import com.baidu.rigel.biplatform.ac.util.MetaNameUtil;
 import com.baidu.rigel.biplatform.ma.report.exception.PivotTableParseException;
 import com.baidu.rigel.biplatform.ma.report.model.FormatModel;
 import com.baidu.rigel.biplatform.ma.report.query.pivottable.CellData;
@@ -143,7 +148,7 @@ public final class DataModelUtils {
      * @return 转换后的PivotTable
      * @throws Exception
      */
-    public static PivotTable transDataModel2PivotTable(DataModel oriDataModel, boolean needLimit,
+    public static PivotTable transDataModel2PivotTable(Cube cube, DataModel oriDataModel, boolean needLimit,
         int limitSize, boolean hideWhiteRow) throws PivotTableParseException {
 
         PivotTable pTable = new PivotTable();
@@ -161,7 +166,25 @@ public final class DataModelUtils {
                 throw parseEx;
             }
         }
-        
+//       //除第一列为时间外，其他表格均按照第一列指标由高到低顺序排列，如为空值，按照维度默认顺序排列
+//        if (org.apache.commons.collections.CollectionUtils.isNotEmpty(dataModel.getRowHeadFields())) {
+//	        	long tmp = dataModel.getColumnHeadFields().stream().
+//	        			filter(headField -> 
+//	        			headField.getExtInfos().get("sortType") != null 
+//	        			&& !"NONE".equals(headField.getExtInfos().get("sortType")))
+//	        			.count();
+//	        	String firstCol = dataModel.getRowHeadFields().get(0)
+//	        			.getNodeUniqueName();
+//	        	if (StringUtils.isNotEmpty(firstCol) && firstCol.contains("SUMMARY")) {
+//	        		firstCol = dataModel.getRowHeadFields().get(0).getChildren().get(0)
+//	        				.getNodeUniqueName();
+//	        	}
+//	        	if (!firstCol.contains("ownertable_Time") && tmp == 0) { //&& hasDataOnFirstCol) {
+//	        		String colUniqueName = dataModel.getRowHeadFields().get(0).getValue();
+//	        		SortRecord sortRecord = new SortRecord(SortRecord.SortType.DESC, colUniqueName, 500);
+//	        		com.baidu.rigel.biplatform.ac.util.DataModelUtils.sortDataModelBySort(dataModel, sortRecord);
+//	        	}
+//        }
         List<HeadField> colHeadFields = dataModel.getColumnHeadFields();
         List<HeadField> rowHeadFields = dataModel.getRowHeadFields();
         
@@ -175,6 +198,7 @@ public final class DataModelUtils {
         // s1. calc colHeight
         // s2. trans colField
         // s3. if rowAxis's exists,fill the first col of colFields
+        String[] dimCaptions = getDimCaptions(cube, rowHeadFields);
         int rowWidth = getHeightOfHeadFieldList(rowHeadFields);
         if (rowHeadFields != null && rowHeadFields.size() != 0) {
             List<ColField> firstColFields = colFields.get(0);
@@ -183,7 +207,8 @@ public final class DataModelUtils {
                 firstColField.setRowspan(colHeight);
                 firstColField.setColSpan(1);
                 firstColField.setUniqName("test");
-                firstColField.setV(StringUtils.EMPTY);
+                // TODO 获取正确的caption信息
+                firstColField.setV(dimCaptions[i].replace("汇总", ""));
                 firstColFields.add(0, firstColField);
             }
         }
@@ -281,10 +306,11 @@ public final class DataModelUtils {
         
         // build cellDataSetRowBased;
         List<List<CellData>> rowBasedData = transColumnBasedData2RowBasedData(columnBasedData);
-        pTable.setDataSourceRowBased(rowBasedData);
-        
-        // build cellDataSetColumnBased;
-        pTable.setDataSourceColumnBased(columnBasedData);
+        if (rowBasedData.size () > 1 || !hasSumRow (rowFields)) {
+            pTable.setDataSourceRowBased(rowBasedData);
+            // build cellDataSetColumnBased;
+            pTable.setDataSourceColumnBased(columnBasedData);
+        }
         
         // build stat;
         pTable.setDataColumns(pTable.getDataSourceColumnBased().size());
@@ -294,9 +320,87 @@ public final class DataModelUtils {
             + (System.currentTimeMillis() - current) + "ms!");
         
         // PivotTableUtils.addSummaryRowHead(pTable);
+        pTable.setOthers (oriDataModel.getOthers ());
         return pTable;
     }
+
+    private static boolean hasSumRow(List<List<RowHeadField>> rowFields) {
+        if (rowFields == null) {
+            return false;
+        }
+        if (CollectionUtils.isEmpty (rowFields)) {
+            return false;
+        }
+        if (CollectionUtils.isEmpty (rowFields.get (0))) {
+            return false;
+        }
+        RowHeadField firstRow = rowFields.get (0).get (0);
+        return firstRow.getV () != null && firstRow.getV ().contains ("合计");
+    }
+
+//	private static boolean hasDataOnFirstCol(DataModel dataModel) {
+//		if (dataModel == null) {
+//			return false;
+//		}
+//		List<List<BigDecimal>> columnBaseData = dataModel.getColumnBaseData();
+//		if (CollectionUtils.isEmpty(columnBaseData)) {
+//			return false;
+//		}
+//		List<BigDecimal> firstColData = columnBaseData.get(0);
+//		if (CollectionUtils.isEmpty(firstColData)) {
+//			return false;
+//		}
+//		boolean rs = true;
+//		for (BigDecimal data : firstColData) {
+//			if (data == null || data.equals(BigDecimal.ZERO)) {
+//				rs = false;
+//				break;
+//			}
+//		}
+//		return rs;
+//	}
     
+    /**
+     * 
+     * @param cube
+     * @param rowHeadFields
+     * @return String[]
+     */
+    private static String[] getDimCaptions(Cube cube, List<HeadField> rowHeadFields) {
+        List<String> captions = Lists.newArrayList();
+        for (HeadField headField : rowHeadFields) {
+            if (!CollectionUtils.isEmpty(headField.getNodeList())) {
+                Collections.addAll(captions, getDimCaptions(cube, headField.getNodeList()));
+            }
+            String uniqueName = headField.getNodeUniqueName();
+            // TODO 这里有问题，需要重新考虑
+            if ("合计".equals(headField.getCaption())) {
+                uniqueName = headField.getChildren().get(0).getValue();
+            } else {
+                uniqueName = headField.getValue();
+//                captions.add(headField.getCaption());
+            }
+            String dimName = MetaNameUtil.getDimNameFromUniqueName(uniqueName);
+            captions.add(getDimensionCaptionByName(cube, dimName));
+        }
+        return captions.toArray(new String[0]);
+    }
+
+    /**
+     * 
+     * @param cube
+     * @param dimName
+     * @return
+     */
+    private static String getDimensionCaptionByName(Cube cube, String dimName) {
+        for (Dimension dim : cube.getDimensions().values()) {
+            if (dim.getName().equals(dimName)) {
+                return dim.getCaption();
+            }
+        }
+        return dimName;
+    }
+
     /**
      * @param rowFields
      */
@@ -333,6 +437,9 @@ public final class DataModelUtils {
                     }
                 } else {
                     rowHead.setDrillByLink(false);
+                    if (i == 0 && rowHead.getIndent () == 0) {
+                        rowHead.setExpand (null);
+                    }
                 }
             }
         }
@@ -356,6 +463,9 @@ public final class DataModelUtils {
         data.setFormattedValue("I,III.DD");
         if (value != null) {
             value = value.setScale(8, RoundingMode.HALF_UP);
+            data.setV(value);
+        } else {
+            value = BigDecimal.ZERO;
             data.setV(value);
         }
         return data;
@@ -454,7 +564,8 @@ public final class DataModelUtils {
         List<HeadField> leafFileds = DataModelUtils.getLeafNodeList(rowHeadFields);
         // hasStoredMap用于记录已经存过的rowField
         Map<String, HeadField> hasStoredMap = new HashMap<String, HeadField>();
-        
+        SimpleDateFormat src = new SimpleDateFormat("yyyyMMdd");
+        SimpleDateFormat target = new SimpleDateFormat("yyyy-MM-dd");
         List<HeadField> ancestorFileds = null;
         for (HeadField filed : leafFileds) {
             ancestorFileds = getHeadListOutofHead(filed);
@@ -482,7 +593,15 @@ public final class DataModelUtils {
                 /**
                  * 把周的开始caption换成完整的caption
                  */
-                rowField.setV(caption);
+                // TODO 临时方案，需要后续调整
+                if (isTimeDim(headField.getValue())) {
+                    try {
+                        rowField.setV(target.format(src.parse(caption)));
+                    } catch (ParseException e) {
+                    }
+                } else {
+                    rowField.setV(caption);
+                }
                 /**
                  * 设置原始展开状态
                  */
@@ -518,6 +637,13 @@ public final class DataModelUtils {
         
     }
     
+    private static boolean isTimeDim(String value) {
+        if (MetaNameUtil.isAllMemberUniqueName(value)) {
+            return false;
+        }
+        return value.contains("ownertable_TimeDay");
+    }
+
     /**
      * 给出任意一个headField的祖先链
      * 
@@ -757,8 +883,7 @@ public final class DataModelUtils {
      * @param rowNum
      * @return
      */
-    public static DataModel merageDataModel(DataModel oriDataModel, DataModel newDataModel,
-        int rowNum) {
+    public static DataModel merageDataModel(DataModel oriDataModel, DataModel newDataModel, int rowNum) {
         DataModel dataModel = new DataModel();
         dataModel.setColumnBaseData(oriDataModel.getColumnBaseData());
         dataModel.setColumnHeadFields(oriDataModel.getColumnHeadFields());
@@ -771,6 +896,7 @@ public final class DataModelUtils {
             throw new IllegalStateException("can not found head field with row number " + rowNum);
         }
         realRowHead.getExtInfos().put(EXT_INFOS_MEM_EXPAND, false);
+        
         realRowHead.setChildren(newDataModel.getRowHeadFields().get(0).getChildren());
         realRowHead.getChildren().forEach(tmp -> {
             tmp.setNodeUniqueName(null);
@@ -916,29 +1042,34 @@ public final class DataModelUtils {
             return;
         }
         
+//        if (CollectionUtils.isEmpty(dataFormat) && CollectionUtils.isEmpty (formatModel.getToolTips ())) {
+//            return;
+//        }
         Map<String, String> dataFormat = formatModel.getDataFormat();
-        if (CollectionUtils.isEmpty(dataFormat)) {
-            return;
+        Map<String, String> toolTips = formatModel.getToolTips ();
+        
+        List<ColDefine> colDefineList = table.getColDefine ();
+        for (ColDefine define : colDefineList) {
+            String uniqueName = define.getUniqueName();
+            uniqueName = MetaNameUtil.parseUnique2NameArray (define.getUniqueName ())[1];
+            if (dataFormat != null) {
+                String formatStr = dataFormat.get("defaultFormat");
+                if (!StringUtils.isEmpty(dataFormat.get(uniqueName))) {
+                    formatStr = dataFormat.get(uniqueName);
+                }
+                if (!StringUtils.isEmpty(formatStr)) {
+                    define.setFormat(formatStr);
+                }
+            }
+            if (toolTips != null) {
+                String toolTip = toolTips.get(uniqueName);
+                if (StringUtils.isEmpty(toolTip)) {
+                    toolTip = uniqueName;
+                }
+                define.setToolTip(toolTip);
+            }
         }
         
-        List<List<CellData>> colDatas = table.getDataSourceColumnBased();
-        for (int i = 0; i < colDatas.size(); ++i) {
-            ColDefine define = table.getColDefine().get(i);
-            String uniqueName = define.getUniqueName();
-            String formatStr = dataFormat.get("defaultFormat");
-            uniqueName = uniqueName.replace("[", "").replace("]", "").replace("Measure", "").replace(".", "");
-            if (!StringUtils.isEmpty(dataFormat.get(uniqueName))) {
-                formatStr = dataFormat.get(uniqueName);
-            }
-            if (!StringUtils.isEmpty(formatStr)) {
-                define.setFormat(formatStr);
-            }
-            String toolTip = formatModel.getToolTips().get(uniqueName);
-            if (StringUtils.isEmpty(toolTip)) {
-                toolTip = uniqueName;
-            }
-            define.setToolTip(toolTip);
-        }
     }
 
     /**
@@ -946,13 +1077,14 @@ public final class DataModelUtils {
      * @param dataModel
      * @return 转换后的文件
      */
-    public static String convertDataModel2CsvString(DataModel dataModel) {
+    public static String convertDataModel2CsvString(Cube cube, DataModel dataModel) {
         StringBuilder rs = new StringBuilder();
         
         List<List<BigDecimal>> rowDatas = convertToRowData(dataModel.getColumnBaseData());
-        int maxDepth = getMaxDepth4Dim(dataModel.getRowHeadFields());
-        for (int i = 0; i < maxDepth; ++i) {
-            rs.append(" ,");
+        String[] captions = getDimCaptions(cube, dataModel.getRowHeadFields());
+        //getMaxDepth4Dim(dataModel.getRowHeadFields());
+        for (String caption : captions) {
+            rs.append(caption + ",");
         }
         final int colSize = dataModel.getColumnHeadFields().size();
         for (int i = 0; i < colSize; ++i) {
@@ -1033,13 +1165,16 @@ public final class DataModelUtils {
      * @param dataModel
      * @return int
      */
-    private static int getMaxDepth4Dim(List<HeadField> headFields) {
-        int rs = 0;
-        if (headFields == null || headFields.size() == 0) {
-            return rs;
-        }
-        rs += getMaxDepth4Dim(headFields.get(0).getNodeList());
-        return rs + 1;
-    }
+//    private static List<String> getMaxDepth4Dim(List<HeadField> headFields) {
+////        int rs = 0;
+//        List<String> rs = Lists.newArrayList();
+//        if (headFields == null || headFields.size() == 0) {
+//            return rs;
+//        }
+//        // dirty solution
+//        rs.add(headFields.get(0).getCaption().replace("汇总", ""));
+//        rs.addAll(getMaxDepth4Dim(headFields.get(0).getNodeList()));
+//        return rs;
+//    }
     
 }

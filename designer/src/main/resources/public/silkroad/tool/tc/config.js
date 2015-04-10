@@ -1,7 +1,7 @@
 /**
  * 相关参数的配置文件
  */
-var projectPath = 'D:/code/eclipse/dataInsight/maker-assembly/src/main/resources/public/silkroad/';
+var projectPath = 'D:/workspace_git/bi-platform/designer/src/main/resources/public/silkroad/';
 module.exports = {
     // 启动时是否自动编译扫描到到的模板
     autoCompile: true,

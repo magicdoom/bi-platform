@@ -15,6 +15,9 @@
  */
 package com.baidu.rigel.biplatform.ac.util;
 
+import org.apache.commons.lang.StringUtils;
+
+
 /**
  * REST工具类
  * 
@@ -69,8 +72,18 @@ public class ResponseResultUtils {
     public static ResponseResult getCorrectResult(String successMessage, Object data) {
         ResponseResult rs = new ResponseResult();
         rs.setStatus(ResponseResult.SUCCESS);
-        rs.setStatusInfo(successMessage);
+//        rs.setStatusInfo(successMessage);
         rs.setData(data);
+        try {
+            String errorMessage = 
+                    (String) ThreadLocalPlaceholder.getProperty (ThreadLocalPlaceholder.ERROR_MSG_KEY);
+            if (StringUtils.isNotBlank (errorMessage)) {
+                rs.setStatusInfo (errorMessage);
+            }
+        } catch(Exception e) {
+        }finally {
+            ThreadLocalPlaceholder.unbindProperty (ThreadLocalPlaceholder.ERROR_MSG_KEY);
+        }
         return rs;
     }
 }

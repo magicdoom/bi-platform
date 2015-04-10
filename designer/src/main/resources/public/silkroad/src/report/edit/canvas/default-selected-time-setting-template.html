@@ -8,7 +8,7 @@
     <div class="item j-item" data-type="D">
         <div class="title">日粒度设置</div>
         <div class="content">
-            <input type="text" name="" value="{{item.defaultSelectedVal}}"/>
+            <input type="text" name="singleDateSetting" value="{{item.defaultSelectedVal}}"/>
             <select>
                 <option value="D">日</option>
             </select>
@@ -20,7 +20,7 @@
     <div class="item j-item" data-type="W">
         <div class="title">周粒度设置</div>
         <div class="content">
-            <input type="text" name="" value="{{item.defaultSelectedVal}}"/>
+            <input type="text" name="singleDateSetting" value="{{item.defaultSelectedVal}}"/>
             <select>
                 <option value="D"{{if item.defaultSelectedUnit == 'D'}} selected{{/if}}>日</option>
                 <option value="W"{{if item.defaultSelectedUnit == 'W'}} selected{{/if}}>周</option>
@@ -33,7 +33,7 @@
     <div class="item j-item" data-type="M">
         <div class="title">月粒度设置</div>
         <div class="content">
-            <input type="text" name="" value="-1"/>
+            <input type="text" name="singleDateSetting" value="-1"/>
             <select>
                 <option value="D"{{if item.defaultSelectedUnit == 'D'}} selected{{/if}}>日</option>
                 <option value="W"{{if item.defaultSelectedUnit == 'W'}} selected{{/if}}>周</option>
@@ -47,7 +47,7 @@
     <div class="item j-item" data-type="Q">
         <div class="title">季粒度设置</div>
         <div class="content">
-            <input type="text" name="" value="-1"/>
+            <input type="text" name="singleDateSetting" value="-1"/>
             <select>
                 <option value="D"{{if item.defaultSelectedUnit == 'D'}} selected{{/if}}>日</option>
                 <option value="W"{{if item.defaultSelectedUnit == 'W'}} selected{{/if}}>周</option>
@@ -62,7 +62,7 @@
     <div class="item j-item" data-type="Y">
         <div class="title">季粒度设置</div>
         <div class="content">
-            <input type="text" name="" value="-1"/>
+            <input type="text" name="singleDateSetting" value="-1"/>
             <select>
                 <option value="D"{{if item.defaultSelectedUnit == 'D'}} selected{{/if}}>日</option>
                 <option value="W"{{if item.defaultSelectedUnit == 'W'}} selected{{/if}}>周</option>

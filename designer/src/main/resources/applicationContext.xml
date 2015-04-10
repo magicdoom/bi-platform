@@ -22,7 +22,7 @@
     <context:property-placeholder location="classpath:conf/application.properties" />
     <!-- 
         Default cache configuration
-     -->
+     
 	<bean id="cacheManager" class="org.springframework.cache.support.SimpleCacheManager">
 		<property name="caches">
 			<set>
@@ -32,5 +32,5 @@
 			</set>
 		</property>
 	</bean>  
-	
+	-->
  </beans>

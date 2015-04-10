@@ -28,6 +28,7 @@ import org.springframework.context.ApplicationContext;
  * @author david.wang
  * @version 1.0.0.1
  */
+@Deprecated
 public final class Context implements Serializable {
 
     /**

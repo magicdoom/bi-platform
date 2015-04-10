@@ -92,7 +92,8 @@ $namespace('di.shared.model');
             S_DATA: URL.fn('OLAP_CHART_S_DATA'),
             S_ADD_DATA: URL.fn('OLAP_CHART_S_ADD_DATA'),
             S_REMOVE_DATA: URL.fn('OLAP_CHART_S_REMOVE_DATA'),
-            OFFLINE_DOWNLOAD: URL.fn('OLAP_CHART_OFFLINE_DOWNLOAD')
+            OFFLINE_DOWNLOAD: URL.fn('OLAP_CHART_OFFLINE_DOWNLOAD'),
+            CHANGE_RADIOBUTTON: URL.fn('OLAP_CHART_CHANGE_RADIOBUTTON')
         }
     );
 
@@ -108,7 +109,8 @@ $namespace('di.shared.model');
             S_DATA: 'DI_ECHART_MODEL_S_DATA_' + getUID(),
             S_ADD_DATA: 'DI_ECHART_MODEL_S_ADD_DATA_' + getUID(),
             S_REMOVE_DATA: 'DI_ECHART_MODEL_S_REMOVE_DATA_' + getUID(),
-            OFFLINE_DOWNLOAD: 'DI_CHART_OFFLINE_DOWNLOAD_' + getUID()
+            OFFLINE_DOWNLOAD: 'DI_CHART_OFFLINE_DOWNLOAD_' + getUID(),
+            CHANGE_RADIOBUTTON: 'DI_CHART_CHANGE_RADIOBUTTON_' + getUID()
         }
     );
 
@@ -123,6 +125,7 @@ $namespace('di.shared.model');
             S_DATA: doParam,
             S_ADD_DATA: doParam,
             S_REMOVE_DATA: doParam,
+            CHANGE_RADIOBUTTON:doParam,
             LITEOLAPCHART_DATA: function (options) {
                 var reportTemplateId = this._fCommonParamGetter.getReportTemplateId();
                 var paramArr = [];
@@ -177,7 +180,8 @@ $namespace('di.shared.model');
             S_DATA: doComplete,
             S_ADD_DATA: doComplete,
             S_REMOVE_DATA: doComplete,
-            OFFLINE_DOWNLOAD: doComplete
+            OFFLINE_DOWNLOAD: doComplete,
+            CHANGE_RADIOBUTTON: doComplete
         }
     );
 
@@ -199,7 +203,8 @@ $namespace('di.shared.model');
             LITEOLAPCHART_DATA: doParse,
             S_DATA: doParse,
             S_ADD_DATA: doParse,
-            S_REMOVE_DATA: doParse
+            S_REMOVE_DATA: doParse,
+            CHANGE_RADIOBUTTON: doParse
         }
     );
 
@@ -223,10 +228,13 @@ $namespace('di.shared.model');
             chartData.series = [];
             for (var x = 0, item; item = rawData.seriesData[x]; x ++) {
                 chartData.series[x] = {};
+                chartData.series[x].colorDefine = item.colorDefine;
                 chartData.series[x].format = item.format;
                 chartData.series[x].name = item.name;
                 chartData.series[x].type = item.type;
                 chartData.series[x].yAxisName = item.yAxisName;
+                // 双y轴数据设置
+                chartData.series[x].yAxisIndex = item.position;
                 chartData.series[x].data = [];
                 for (var y = 0, yLen = item.data.length; y < yLen; y ++) {
                     chartData.series[x].data[y] = item.data[y] ? item.data[y] : 0;
@@ -239,14 +247,13 @@ $namespace('di.shared.model');
                 data: rawData.xAxisCategories
             };
 
-
             // 多y轴的处理
             // 兼容老代码：如果没有多轴的情况，就不进行轴设置
             var yNameMap = {};
             var k;
             var ser;
             for (k = 0; ser = chartData.series[k]; k ++) {
-                yNameMap[ser.yAxisName] = 1;
+                yNameMap[ser.yAxisName] = ser.yAxisIndex;
             }
             k = 0;
 
@@ -306,7 +313,8 @@ $namespace('di.shared.model');
             LITEOLAPCHART_DATA: doError,
             S_DATA: doError,
             S_ADD_DATA: doError,
-            S_REMOVE_DATA: doError
+            S_REMOVE_DATA: doError,
+            CHANGE_RADIOBUTTON: doError
         }
     );
 
@@ -331,4 +339,3 @@ $namespace('di.shared.model');
     };
 
 })();
-

@@ -211,7 +211,7 @@
             var tmpEl = DOM.getParent(el);
             tmpEl && tmpEl.removeChild(el);
         }
-    }
+    };
     /**
      * 获取上一个元素
      *
@@ -220,6 +220,42 @@
      */
     DOM.getPreviousSibling = function(el) {
         return el.previousElementSibling || el.previousSibling;
+    };
+    /**
+     * 获取下一个元素
+     *
+     * @public
+     * @param {HTMLElement} el Element 对象
+     */
+    DOM.getNextSibling = function(el) {
+        return el.nextElementSibling || el.nextSibling;
+    };
+    /**
+     * 挂载事件。
+     * @public
+     *
+     * @param {Object} obj 响应事件的对象
+     * @param {string} type 事件类型
+     * @param {Function} func 事件处理函数
+     */
+    DOM.attachEvent = DOM.ieVersion ? function (obj, type, func) {
+        obj.attachEvent('on' + type, func);
+    } : function (obj, type, func) {
+        obj.addEventListener(type, func, false);
+    };
+
+    /**
+     * 卸载事件。
+     * @public
+     *
+     * @param {Object} obj 响应事件的对象
+     * @param {string} type 事件类型
+     * @param {Function} func 事件处理函数
+     */
+    DOM.detachEvent = DOM.ieVersion ? function (obj, type, func) {
+        obj.detachEvent('on' + type, func);
+    } : function (obj, type, func) {
+        obj.removeEventListener(type, func, false);
     };
 
 })();

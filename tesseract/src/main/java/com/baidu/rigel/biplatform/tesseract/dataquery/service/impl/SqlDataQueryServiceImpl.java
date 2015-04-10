@@ -21,7 +21,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -40,12 +39,10 @@ import com.baidu.rigel.biplatform.tesseract.dataquery.service.DataQueryService;
 import com.baidu.rigel.biplatform.tesseract.isservice.meta.SqlQuery;
 import com.baidu.rigel.biplatform.tesseract.isservice.search.agg.AggregateCompute;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryRequest;
-import com.baidu.rigel.biplatform.tesseract.resultset.TesseractResultSet;
 import com.baidu.rigel.biplatform.tesseract.resultset.isservice.Meta;
-import com.baidu.rigel.biplatform.tesseract.resultset.isservice.ResultRecord;
-import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchResultSet;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchIndexResultRecord;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchIndexResultSet;
 import com.baidu.rigel.biplatform.tesseract.util.isservice.LogInfoConstants;
-import com.google.common.collect.Lists;
 
 /**
  * 
@@ -110,9 +107,9 @@ public class SqlDataQueryServiceImpl implements DataQueryService {
      * javax.sql.DataSource, long, long)
      */
     @Override
-    public TesseractResultSet queryForDocListWithSQLQuery(SqlQuery sqlQuery, DataSource dataSource, long limitStart,
+    public SearchIndexResultSet queryForDocListWithSQLQuery(SqlQuery sqlQuery, DataSource dataSource, long limitStart,
             long limitEnd) {
-        return new SearchResultSet(querySqlList(sqlQuery, dataSource, limitStart, limitEnd));
+        return querySqlList(sqlQuery, dataSource, limitStart, limitEnd);
     }
     
     
@@ -124,7 +121,7 @@ public class SqlDataQueryServiceImpl implements DataQueryService {
      * @param limitEnd
      * @return
      */
-    private LinkedList<ResultRecord> querySqlList(SqlQuery sqlQuery, DataSource dataSource, long limitStart,
+    private SearchIndexResultSet querySqlList(SqlQuery sqlQuery, DataSource dataSource, long limitStart,
             long limitEnd) {
         long current = System.currentTimeMillis();
         if (sqlQuery == null || dataSource == null || limitEnd < 0) {
@@ -135,10 +132,10 @@ public class SqlDataQueryServiceImpl implements DataQueryService {
 
         this.initJdbcTemplate(dataSource);
 
-        LinkedList<ResultRecord> resultList = Lists.newLinkedList();
 
         Meta meta = new Meta(sqlQuery.getSelectList().toArray(new String[0]));
-
+        SearchIndexResultSet resultSet = new SearchIndexResultSet(meta, 1000000);
+        
         jdbcTemplate.query(new PreparedStatementCreator() {
 
             @Override
@@ -163,15 +160,14 @@ public class SqlDataQueryServiceImpl implements DataQueryService {
                     }
                 }
 
-                ResultRecord record = new ResultRecord(fieldValues.toArray(new Serializable[0]), meta);
-                record.setGroupBy(groupBy);
-                resultList.add(record);
+                SearchIndexResultRecord record = new SearchIndexResultRecord(fieldValues.toArray(new Serializable[0]), groupBy);
+                resultSet.addRecord(record);
             }
         });
         LOGGER.info(String.format(LogInfoConstants.INFO_PATTERN_FUNCTION_END, "querySqlList", "[sqlQuery:" + sqlQuery.toSql()
                 + "][dataSource:" + dataSource + "][limitStart:" + limitStart + "][limitEnd:" + limitEnd + "] cost"
                 + (System.currentTimeMillis() - current + "ms!")));
-        return resultList;
+        return resultSet;
     }
     
     /*
@@ -198,24 +194,26 @@ public class SqlDataQueryServiceImpl implements DataQueryService {
     }
 
     @Override
-    public TesseractResultSet queryForListWithSQLQueryAndGroupBy(SqlQuery sqlQuery, DataSource dataSource,
+    public SearchIndexResultSet queryForListWithSQLQueryAndGroupBy(SqlQuery sqlQuery, DataSource dataSource,
             long limitStart, long limitEnd, QueryRequest queryRequest) {
 
         long current = System.currentTimeMillis();
 
-        LinkedList<ResultRecord> resultList = querySqlList(sqlQuery, dataSource, limitStart, limitEnd);
+        SearchIndexResultSet resultSet = querySqlList(sqlQuery, dataSource, limitStart, limitEnd);
         
-        LOGGER.info("query sql:" + sqlQuery.toSql() + "result size: " + resultList.size() + " cost:" + (System.currentTimeMillis() - current));
+        LOGGER.info("query sql:" + sqlQuery.toSql() + "result size: " + resultSet.size() + " cost:" + (System.currentTimeMillis() - current));
         current = System.currentTimeMillis();
         
-        if (CollectionUtils.isEmpty(resultList)) {
+        if (CollectionUtils.isEmpty(resultSet.getDataList())) {
             LOGGER.warn("no result from sql query:" + sqlQuery.toSql());
-            return new SearchResultSet(null);
+            return resultSet;
         }
-        TesseractResultSet result = new SearchResultSet(AggregateCompute.aggregate(resultList, queryRequest));
+        
+        resultSet.setDataList(AggregateCompute.aggregate(resultSet.getDataList(), queryRequest));
+        
         LOGGER.info("group by cost:" + (System.currentTimeMillis() - current));
 
-        return result;
+        return resultSet;
     }
 
 }

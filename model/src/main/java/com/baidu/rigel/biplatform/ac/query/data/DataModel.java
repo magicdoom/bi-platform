@@ -62,6 +62,11 @@ public class DataModel implements Serializable {
      * 结果集原始大小
      */
     private int recordSize;
+    
+    /**
+     * 非数据模型内容
+     */
+    private String others;
 
     /**
      * default generate get rowHeadFields
@@ -166,5 +171,13 @@ public class DataModel implements Serializable {
         return "DataModel [rowHeadFields=" + rowHeadFields + ", columnHeadFields=" + columnHeadFields
                 + ", columnBaseData=" + columnBaseData + ", operateIndex=" + operateIndex + "]";
     }
+    public String getOthers() {
+        return others;
+    }
 
+    public void setOthers(String others) {
+        this.others = others;
+    }
+
+    
 }

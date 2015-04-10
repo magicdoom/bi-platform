@@ -214,7 +214,7 @@ public class DirectorImpl implements Director {
         final Map<String, Dimension> tmp = Maps.newHashMap();
         oriDims.values().forEach(dim -> {
             if (dim.getType() != DimensionType.GROUP_DIMENSION && dim.getTableName().equals(cube.getSource())) {
-                tmp.put(dim.getPrimaryKey(), dim);
+                tmp.put(dim.getName (), dim);
             }
         });
         while (it.hasNext()) {
@@ -222,6 +222,7 @@ public class DirectorImpl implements Director {
             if (tmp.containsKey(m.getName())) {
                 Dimension dim = tmp.get(m.getName());
                 dims.put(dim.getId(), dim);
+                it.remove ();
             }
         }
     }
@@ -239,24 +240,24 @@ public class DirectorImpl implements Director {
         Iterator<Entry<String, Dimension>> it = oriDims.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, Dimension> tmpDim = it.next();
+            it.remove ();
             Dimension dim = tmpDim.getValue();
-            if (dim.getType() != DimensionType.GROUP_DIMENSION) {
-                it.remove();
-                continue;
-            }
-            Iterator<Map.Entry<String, Level>> levelIterator = dim.getLevels().entrySet().iterator();
-            for (;levelIterator.hasNext();) {
-                Map.Entry<String, Level> tmp = levelIterator.next();
-                String key = tmp.getKey();
-                if (!allLevelIds.contains(key)) {
-                    levelIterator.remove();
+            if (dim.getType() == DimensionType.GROUP_DIMENSION) {
+                Iterator<Map.Entry<String, Level>> levelIterator = dim.getLevels().entrySet().iterator();
+                for (;levelIterator.hasNext();) {
+                    Map.Entry<String, Level> tmp = levelIterator.next();
+                    Level value = tmp.getValue ();
+                    String key = value.getFactTableColumn () + "_" 
+                            + value.getDimTable () + "_" +  value.getName ();
+                    if (!allLevelIds.contains(key)) {
+                        levelIterator.remove();
+                    }
+                }
+                if (dim.getLevels ().size () > 0) {
+                    dims.put (dim.getId (), dim);
                 }
             }
-            if (dim.getLevels().size() == 0) {
-                it.remove();
-            }
         }
-        dims.putAll(oriDims);
         return dims;
     }
 
@@ -271,7 +272,11 @@ public class DirectorImpl implements Director {
     private Set<String> getAllLevels(Map<String, Dimension> dims) {
         Set<String> levelKeys = new HashSet<String>();
         for (Map.Entry<String, Dimension> dim : dims.entrySet()) {
-            levelKeys.addAll(dim.getValue().getLevels().keySet());
+            String key = dim.getValue ().getFacttableColumn () + "_" 
+                    + dim.getValue ().getTableName ();
+            dim.getValue ().getLevels ().values ().forEach (level -> {
+                levelKeys.add(key + "_" + level.getName ());
+            });
         }
         return levelKeys;
     }
@@ -323,7 +328,7 @@ public class DirectorImpl implements Director {
         if (level instanceof MiniCubeLevel) {
             return ident + "_" + ((MiniCubeLevel) level).getSource();
         }
-        return ident + "_" + ((CallbackLevel) level).getCallbackUrl();
+        return ident + "_" + ((CallbackLevel) level).getName();
     }
 
     /**

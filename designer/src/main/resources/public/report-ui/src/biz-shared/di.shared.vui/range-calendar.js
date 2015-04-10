@@ -78,20 +78,21 @@ $namespace('di.shared.vui');
                 "name": calendarId,
                 "id": calendarId,
                 "value": "",
-                "endlessCheck": "false",
-                "isEndless": "false",
+                "endlessCheck": false,
+                "isEndless": false,
                 "showedShortCut": "昨天,最近7天,上周",
                 "extensions": [],
                 "renderOptions": {},
                 "main": document.getElementById(calendarId)
             }
         );
+        esui.config({ uiClassPrefix: 'esui-ui' });
         // 设置可选择的范围，结束时间为昨天以后可以选择
-        cal.range.end = new Date(Kalendae.moment().subtract({d:1}).format('YYYY-MM-DD'));
+        cal.range.end = new Date(Kalendae.moment().subtract({d:0}).format('YYYY-MM-DD'));
         // 设置默认选择的范围，昨天
         cal.setRawValue({
-            begin: new Date(Kalendae.moment().subtract({d:1}).format('YYYY-MM-DD')),
-            end: new Date(Kalendae.moment().subtract({d:1}).format('YYYY-MM-DD'))
+            begin: new Date(Kalendae.moment().subtract({d:0}).format('YYYY-MM-DD')),
+            end: new Date(Kalendae.moment().subtract({d:0}).format('YYYY-MM-DD'))
         });
         cal.render();
         cal.on('change', function (event) {
@@ -132,6 +133,7 @@ $namespace('di.shared.vui');
             begin: new Date(begin),
             end: new Date(end)
         };
+        this.currentDate = begin + ' - ' + end;
         this.rangeCal.setRawValue(setting);
         this.rangeCal.render();
         this._oData = data;
@@ -163,12 +165,13 @@ $namespace('di.shared.vui');
     RANGE_CALENDAR_CLASS.getValue = function () {
         if (this.currentDate === undefined) {
             // 设置默认值
-            var defStart = Kalendae.moment().subtract({d:1}).format('YYYY-MM-DD');
-            var defEnd = Kalendae.moment().subtract({d:1}).format('YYYY-MM-DD');
+            var defStart = Kalendae.moment().subtract({d:0}).format('YYYY-MM-DD');
+            var defEnd = Kalendae.moment().subtract({d:0}).format('YYYY-MM-DD');
             var setting = {
                 begin: new Date(defStart),
                 end: new Date(defEnd)
             };
+            this.currentDate = defStart + ' - ' + defEnd;
             this.rangeCal.setRawValue(setting);
             this.rangeCal.render();
             return {

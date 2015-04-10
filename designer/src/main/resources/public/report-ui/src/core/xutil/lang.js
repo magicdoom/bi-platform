@@ -14,7 +14,7 @@
     var objProto = Object.prototype;
     var objProtoToString = objProto.toString;
     var hasOwnProperty = objProto.hasOwnProperty;
- 
+    var trim = STRING.trim;
     /**
      * 判断变量是否有值
      * null或undefined时返回false。
@@ -38,7 +38,7 @@
      */
     LANG.hasValueNotBlank = function (variable) {
         return LANG.hasValue(variable)
-           && (!LANG.isString(variable) || STRING.trim(variable) != '');
+           && (!LANG.isString(variable) || trim(variable) != '');
     };
 
     /**

@@ -72,6 +72,7 @@ public class MiniCubeSqlConnection implements MiniCubeConnection {
             sb.append("execute query questionModel:").append(questionModel).append(" cost:")
                     .append(System.currentTimeMillis() - current).append("ms");
             log.info(sb.toString());
+            dataModel.setOthers (responseResult.getStatusInfo ());
             return dataModel;
         }
         throw new MiniCubeQueryException("query occur error,msg:" + responseResult.getStatusInfo());

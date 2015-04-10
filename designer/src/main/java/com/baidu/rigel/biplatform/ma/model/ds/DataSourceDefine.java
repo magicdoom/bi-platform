@@ -79,6 +79,11 @@ public class DataSourceDefine implements Serializable {
      */
     private String hostAndPort;
     
+    /**
+     * 数据来源类型
+     */
+    private SourceType sourceType = SourceType.RELATION_DATABASE;
+    
     public String getId() {
         return id;
     }
@@ -179,4 +184,25 @@ public class DataSourceDefine implements Serializable {
     public void setEncoding(String encoding) {
         this.encoding = encoding;
     }
+
+    /**
+     * @return the dataSourceType
+     */
+    public SourceType getDataSourceType() {
+        if (this.sourceType == null) {
+            return SourceType.RELATION_DATABASE;
+        }
+        return this.sourceType;
+    }
+
+    /**
+     * @param dataSourceType the dataSourceType to set
+     */
+    public void setDataSourceType(SourceType sourceType) {
+        if (sourceType != null) {
+            this.sourceType = sourceType;
+        }
+    }
+    
+    
 }

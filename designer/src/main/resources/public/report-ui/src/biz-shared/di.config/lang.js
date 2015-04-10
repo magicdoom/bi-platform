@@ -25,7 +25,7 @@ $namespace('di.config');
     };
 
     LANG.AJAX_TIMEOUT = '请求超时，请稍后重试';
-    LANG.AJAX_WAITING = '加载中...';
+    LANG.AJAX_WAITING = '请稍候';
     
     LANG.SMILE_FACE = '&nbsp;<div class="global-smile-face"></div>&nbsp;&nbsp;&nbsp;';
     LANG.SAD_FACE = '&nbsp;<div class="global-sad-face"></div>&nbsp;&nbsp;&nbsp;';

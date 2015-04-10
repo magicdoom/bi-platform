@@ -57,6 +57,7 @@ MessageBox - 消息框功能。
             body = ECUI_MESSAGEBOX.getBody();
             body.innerHTML =
                 '<div class="ui-messagebox-text"></div>' +
+                '<div class="ui-messagebox-pic"></div>' +
                 '<div class="ui-messagebox-bottom"></div>';
         }
 

@@ -61,7 +61,7 @@ public final class LocalFileOperationUtils {
     /**
      * LocalFileOperationUtils
      */
-    private LocalFileOperationUtils() {
+    LocalFileOperationUtils() {
         
     }
     /**
@@ -189,7 +189,7 @@ public final class LocalFileOperationUtils {
         File oldFile = new File(oldFilePath);
         File newFile = new File(newFilePath);
         Map<String, Object> result = preCheck(oldFile, newFile, replace);
-        if (result == null) {
+        if (result != null) {
             return result;
         }
         return doAction(oldFile, newFile, true);

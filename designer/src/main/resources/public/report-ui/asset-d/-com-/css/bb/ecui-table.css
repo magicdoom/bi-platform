@@ -1,46 +1,39 @@
-/**
- * Table
- */
-/*.ui-table {*/
-    /*border-top: 3px solid #2070BB;*/
-/*}*/
 .ui-table table {
     table-layout: fixed;
 }
 .ui-table-head {
-    border-top: 1px solid #CCC;
-    border-bottom: 1px solid #CCC;
-    border-right: 1px solid #e7f9fe;
-    height: 30px;
+    border-top: 1px solid #cfebf6;
+    /*border-bottom: 1px solid #cfebf6;*/
+    border-right: 1px solid #cfebf6;
+    /*border-left: 1px solid #cfebf6;*/
+    height: 40px;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
     user-select: none;
 }
 .ui-table-locked-head {
-    border-bottom: 1px solid #CCC;
-    border-top: 1px solid #CCC;
-    border-left: 1px solid #CCC;
-    border-right: 1px solid #E7F9FE;
+    border-top: 1px solid #cfebf6;
+    border-bottom: 1px solid #E7F9FE;
+    border-left: 1px solid #cfebf6;
     height: 30px;
     overflow: hidden;
 }
-.ui-table-layout {
-    border-right: 1px solid #FFF;
-}
-.ui-table-locked-layout {
-    border-left: 1px solid #CCC;
-    border-right: 1px solid #CCC;
-    border-bottom: 1px solid #CCC;
+.ui-table-layout, .ui-table-locked-layout {
+    border-right: 1px solid #cfebf6;
 }
 .ui-table-cell {
     background: #FFF;
+    border-left: 1px solid #CFEBF6;
     border-bottom: 1px solid #CCC;
-    height: 30px;
+    height: 39px;
     line-height: 30px;
-    padding: 0 9px;
+    padding: 0 20px;
     color: #555;
     margin: 0;
     max-width: 200px;
     text-overflow: ellipsis;
-    overflow: hidden;
+    overflow: visible;
     white-space: nowrap;
     word-break: keep-all;
 }
@@ -52,30 +45,51 @@
 .ui-table-hcell,
 .ui-table-rowhcell {
     position: relative;
-    color: #000;
-    height: 30px;
-    line-height: 30px;
-    padding: 0 9px;
+    border-left: 1px solid #CFEBF6;
+    /*border-bottom: 1px solid #e7ecee;*/
+    color: #727272;
+    height: 39px;
+    line-height: 39px;
     margin: 0;
-    /*vertical-align: middle;*/
+    vertical-align: middle;
     cursor: default;
     font-weight: normal;
     text-overflow: ellipsis;
-    overflow: hidden;
+    overflow: visible;
     white-space: nowrap;
     word-break: keep-all;
+    padding: 0 20px 0 20px;
+    /*border-bottom: 1px solid #CCC;*/
+}
+/*.ui-table-rowhcell:before {*/
+    /*content: ' ';*/
+    /*font-size: 0;*/
+    /*width: 20px;*/
+    /*height: 100%;*/
+    /*position: absolute;*/
+    /*display: inline-block;*/
+    /*top: 0;*/
+    /*left: 0;*/
+    /*border-bottom: 1px solid #fff;*/
+/*}*/
+.ui-table-expand-background:before {
+    border-bottom-color: #f6f6f5;
+}
+.ui-table-rowhcell .ui-table-tree-item {
+    height: 39px;
+    padding-left: 15px;
+    /*border-bottom: 1px solid #CCC;*/
 }
 .ui-table-hcell-bag {
     margin: 0 10px 0 10px;
 }
 .ui-plane-table-hcell-bag{
-	margin: 0 20px 0 20px;
+    margin: 0 20px 0 20px;
 }
 .ui-plane-table-hcell-bag-lastcolumn{
-	padding: 0 33px 0 0;
+    padding: 0 33px 0 0;
 }
 .ui-table-rowhcell {
-    text-align: center;
     text-align: left;
     color: #333;
 }
@@ -91,7 +105,10 @@
     background: #E7F9FE;
 }
 .ui-table-row-hover .ui-table-ccell {
-    /*background: #FFF;*/
+    background: #F0F4F6;
+}
+.ui-table-row-hover .ui-table-rowhcell {
+    background: #F0F4F6;
 }
 .ui-table-row-checked .ui-table-ccell,
 .ui-table-row-selected .ui-table-ccell {
@@ -126,7 +143,6 @@
     padding: 0 5px;
 }
 .ui-table-tree-item {
-    padding-left: 16px;
     position: relative;
 }
 .ui-table-e-c-icon {
@@ -135,11 +151,13 @@
     overflow: hidden;
     background: url(img/icon.png) 0px 0px no-repeat;
     position: absolute;
-    left: 2px;
+    left: 1px;
     top: 10px;
     vertical-align: middle;
     cursor: pointer;
     display: none;
+    margin-top: 6px;
+    /*float: left;*/
 }
 .ui-table-expanded-icon {
     background-position: -16px -151px;
@@ -149,23 +167,25 @@
     background-position: -25px -151px;
     display: block;
 }
-/* 表格纵向滚动条 */
+.ui-table-default-icon {
+    padding-left: 0;
+}
+/* 表格纵向滚动条改为左侧边框线 */
 .ui-table .ui-vscrollbar {
-    width: 6px;
-    background: #FFF;
-    padding: 30px 0 0 0;
-    border-right: 1px solid #CCC;
-    border-bottom: 1px solid #CCC;
+    width: 1px;
+    /*background-color: #CFEBF6;*/
+    background-color: rgba(255, 255, 255, 0);
+    padding: 40px 0 0 0;
+    z-index: 2;
 }
 .ui-table .ui-vscrollbar .ui-button {
     cursor: default;
     padding: 0;
     margin: 0;
-    background-color: #e7f9fe;
+    /*background-color: #CFEBF6;*/
 }
 .ui-table .ui-vscrollbar .ui-button-hover {
     padding: 0;
-    margin: 0;
     cursor: default;
     border-radius: 0;
     -webkit-border-radius: 0;
@@ -173,30 +193,47 @@
     -moz-border-radius: 0;
     -ms-border-radius: 0;
 }
+/* 竖直滚动条顶部按钮修改 */
 .ui-table .ui-vscrollbar-prev {
-    width: 6px;
+    width: 1px;
     height: 14px;
     border: 0;
-    background: #E7F9FE;
+    background-color: rgba(255, 255, 255, 0);
     overflow: hidden;
-    border-bottom: 1px solid #CCC;
-    border-right: 1px solid #CCC;
-    border-top: 1px solid #CCC;
+    /*border-bottom: 1px solid #e7ecee;*/
+    border-right: 1px solid #cfebf6;
+    border-top: 1px solid #cfebf6;
     border-radius: 0;
 }
 .ui-table .ui-vscrollbar-next {
     width: 6px;
     height: 14px;
-    border: 0;
     background: url(img/icon2.png) -59px -84px no-repeat;
     overflow: hidden;
     border: 1px solid #A2BCC7;
     display: none;
 }
+/* 竖直滚动条本体隐藏 */
 .ui-table .ui-vscrollbar .ui-scrollbar-thumb {
-    width: 6px;
-    background: #b5b5b5;
+    width: 0;
+    padding: 0;
+    background: rgba(255, 255, 255, 0);
     border-radius: 4px;
+    overflow: visible;
+}
+/* 表格竖直滚动条浮动 */
+.ui-table .ui-vscrollbar .ui-scrollbar-thumb:before {
+    content: ' ';
+    font-size: 0;
+    width: 7px;
+    position: absolute;
+    display: inline-block;
+    top: 0;
+    left: -12px;
+    height: 100%;
+    background-color: #b5b5b5;
+    border-radius: 5px;
+    z-index: 3;
 }
 /* 表格横向滚动条 */
 .ui-table .ui-hscrollbar {
@@ -270,19 +307,26 @@
 .ui-table-head-tips {
     width: 15px;
     height: 15px;
-    background: #8A8C8C;
-    border-radius: 8px;
     line-height: 15px;
-    color: #E7F9FE;
     display: inline-block;
-    text-align: center;
+    background: url("img/icon-help-normal.png");
+}
+.ui-table-head-tips:hover {
+    width: 15px;
+    height: 15px;
+    line-height: 15px;
+    display: inline-block;
+    background: url("img/icon-help-hover.png");
 }
 .ui-table-heade-th-content {
     text-align: center;
     height: 30px;
 }
 .ui-table-head-font {
-
+    color: #727272;
+    font-size: 12px;
+    font-weight: bold;
+    margin-right: 7px;
 }
 .ui-table-hcell-sort-desc {
     background-image: url(img/icon-hcell-desc.png);
@@ -292,6 +336,7 @@
     display: inline-block;
     color: #E7F9FE;
     vertical-align: middle;
+    margin-right: 4px;
 }
 .ui-table-hcell-sort-asc {
     background-image: url(img/icon-hcell-asc.png);
@@ -301,6 +346,7 @@
     height: 18px;
     color: #E7F9FE;
     vertical-align: middle;
+    margin-right: 4px;
 }
 .ui-table-hcell-sort,
 .ui-table-hcell-sort-none {
@@ -311,6 +357,7 @@
     height: 18px;
     color: #E7F9FE;
     vertical-align: middle;
+    margin-right: 4px;
 }
 .ui-table-heade-th-content span {
     padding: 0;
@@ -319,25 +366,98 @@
 
 .ui-table-head-drag {
     position: absolute;
-    top: 0px;
-    right: 0px;
+    top: 0;
+    right: 0;
     width: 10px;
     height: 100%;
 }
-.ui-table-dot-line {
+.ui-table-drag-box {
     position: absolute;
-    width: 1px;
-    border-right: 2px dashed #ccc;
-    display: none;
+    width: 10px;
+    height: 100%;
     cursor: col-resize;
 }
+.ui-table-dot-box-drag {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 9px;
+    height: 100%;
+    display: none;
+}
+.ui-table-dot-box-line {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    border-right: 1px dashed #CCCCCC;
+}
+/* 数据展示居左 */
 .ui-table-head-th-content {
     text-align: left;
 }
-.ui-table-head-th-content span {
-    margin-right: 7px;
-}
-
 .ui-table-expand-background {
     background-color: #F6F6F5;
+}
+.ui-table-row-selected .ui-table-rowhcell{
+	background: #FFF;
+}
+/* 表格内部数据外框样式 */
+.ui-table-cell-infor {
+    height: 39px;
+    display: block;
+    padding: 0 20px 0 10px;
+}
+
+.ui-table-layout
+.ui-table-body
+tr > td{
+    position: relative;
+}
+/* 左侧留白 */
+.ui-table-locked-layout
+tr > td:first-child:before {
+    content: ' ';
+    font-size: 0;
+    width: 20px;
+    height: 100%;
+    position: absolute;
+    display: inline-block;
+    top: 0;
+    left: 0;
+    border-bottom: 1px solid #FFF;
+}
+/* 右侧留白 */
+.ui-table-layout
+.ui-table-body
+tr > td:last-child:after{
+    content: ' ';
+    font-size: 0;
+    width: 20px;
+    height: 39px;
+    position: absolute;
+    right: 0;
+    top: 0;
+    display: inline-block;
+    border-bottom: 1px solid #FFF;
+}
+/* 表格内容区域横向表格线 */
+.ui-table-cell-infor {
+    border-bottom: 1px solid #ccc;
+}
+/* 内容区域左侧10px边距 */
+.ui-table-cell-text {
+    margin-left: -10px;
+}
+/* 表头内容区域10px左边距 */
+.ui-table-head
+.ui-table-head-font  {
+    margin-left: -10px;
+}
+/* 汇总行字体加粗 */
+.ui-table-expand-font {
+    font-weight: bold;
+}
+/* 解决表头第一块区域左侧边框线错位问题 */
+.ui-table-locked-head th:first-child {
+    border-left: 1px solid #E7F9FE;
 }

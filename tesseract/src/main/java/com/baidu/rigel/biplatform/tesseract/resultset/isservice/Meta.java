@@ -71,6 +71,16 @@ public class Meta implements Serializable {
     public Map<String, Integer> getFieldNames() {
         return fieldNames;
     }
+    
+    
+    /** 
+     * getFieldIndex
+     * @param field
+     * @return
+     */
+    public int getFieldIndex(String field) {
+       return fieldNames.get(field);
+    }
 
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()

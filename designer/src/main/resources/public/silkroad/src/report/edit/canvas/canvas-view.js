@@ -11,7 +11,8 @@ define([
         'report/component-box/main-view',
         'report/edit/canvas/edit-comp-view',
         'report/edit/canvas/edit-btns-template',
-        'report/edit/canvas/guides-template'
+        'report/edit/canvas/guides-template',
+        'report/global-menu-btns/main-view'
     ],
     function (
         template,
@@ -21,7 +22,8 @@ define([
         ComponentBoxView,
         EditCompView,
         editBtnsTemplate,
-        guidesTemplate
+        guidesTemplate,
+        GlobalMenuView
     ) {
 
         return Backbone.View.extend({
@@ -34,8 +36,7 @@ define([
                 'click .j-button-preview-report': 'previewReport',
                 'click .j-comp-div': 'focusText',
                 'blur .j-comp-text': 'blurText',
-                'keydown .j-comp-text': 'keyDownText',
-                'change .j-select-default': 'changeSelectDefault'
+                'keydown .j-comp-text': 'keyDownText'
             },
             /* 判断是否保存的变量 */
             savestate: 0,
@@ -49,6 +50,12 @@ define([
             initialize: function (option) {
                 var that = this;
 
+                // 初始化工具栏菜单模块
+                that.globalMenuView = new GlobalMenuView({
+                    el: that.el,
+                    reportId: that.id,
+                    canvasView: that
+                });
                 // 初始化工具箱
                 that.compBoxView = new ComponentBoxView({
                     el: that.el,
@@ -335,12 +342,17 @@ define([
                 // 上下小零件的总高度94（=40+19+35），一行数据加表头的高度70
                 $component.filter('[data-component-type="TABLE"]').resizable("option", "minHeight", 204);
                 // 固定单选下拉框的高度
-                that.dragWidthHeight($component, 'SELECT', 47, 47);
+                that.dragWidthHeight($component, 'SELECT', 33, 33);
                 // 固定多选下拉框的高度
-                that.dragWidthHeight($component, 'MULTISELECT', 47, 47);
+                that.dragWidthHeight($component, 'MULTISELECT', 33, 33);
                 // 固定文本框的高度
-                that.dragWidthHeight($component, 'TEXT', 50, 50);
-                that.dragWidthHeight($component, 'H_BUTTON', 50, 50);
+                that.dragWidthHeight($component, 'TEXT', 33, 33);
+                // 固定查询按钮的高度
+                that.dragWidthHeight($component, 'H_BUTTON', 33, 33, 67);
+                // 固定查询按钮的高度
+                that.dragWidthHeight($component, 'TIME_COMP', 33, 33, 220);
+                // 固定查询按钮的高度
+                that.dragWidthHeight($component, 'SINGLE_DROP_DOWN_TREE', 33, 33, 210, 210);
                 // 删除参考线-避免重复渲染产生多余的参考线
                 that.removeGuides($component);
                 // 调整后添加参考线
@@ -354,11 +366,16 @@ define([
              * @param {string} type 组件类型
              * @param {number} minHeight 组件拖拽最小高度
              * @param {number} maxHeight 组件拖拽最大高度
+             * @param {number} minWidth 组件拖拽最小宽度
+             * @param {number} maxWidth 组件拖拽最大宽度
              * @public
              */
-            dragWidthHeight: function ($ele, type, minHeight, maxHeight) {
+            dragWidthHeight: function ($ele, type, minHeight, maxHeight, minWidth, maxWidth) {
                 $ele.filter('[data-component-type="' + type + '"]').resizable("option", "minHeight", minHeight);
                 $ele.filter('[data-component-type="' + type + '"]').resizable("option", "maxHeight", maxHeight);
+                $ele.filter('[data-component-type="' + type + '"]').resizable("option", "minWidth", minWidth);
+                $ele.filter('[data-component-type="' + type + '"]').resizable("option", "maxWidth", maxWidth);
+
             },
 
             /**
@@ -402,7 +419,9 @@ define([
              * @public
              */
             addEditBtns: function ($component) {
-                $component.prepend(editBtnsTemplate.render());
+                $component.find('.con-edit-btns').remove();
+                $component.append(editBtnsTemplate.render());
+                $component.find('.comp-box').css('margin-top', 0);
                 // 文本框编辑数据及关联隐藏
                 for (var i = 0; i < $component.length; i ++) {
                     var compType = $($component[i]).attr('data-component-type');
@@ -436,10 +455,55 @@ define([
              * @public
              */
             saveReport: function () {
-                this.model.saveReport(function () {
+                var that = this;
+                var nowReport = this.$el.find('.reportName').text();
+                this.model.saveReport(nowReport, function () {
                     dialog.success('报表保存成功。');
-                });
+                }, openDataFormatDialog);
                 this.savestate = 1;
+                function openDataFormatDialog(title, nowReport) {
+                    var html;
+                    var reportId = window.dataInsight.main.id;
+                    html =
+                        '<div class="save-reportNameBox">'
+                        + '<div class="save-reportName">' + title + '</div>'
+                        + '<input type="text" class="save-reportSetName" value="' + nowReport + '"/></div>';
+                    dialog.showDialog({
+                        content: html,
+                        title: '保存提示',
+                        dialog: {
+                            height: 200,
+                            width: 300,
+                            open: function () {
+                            },
+                            buttons: {
+                                '确认': function () {
+                                    // TODO:此逻辑应写在MODEL
+                                    $.ajax({
+                                        type: "POST",
+                                        dataType: "json",
+                                        cache: false,
+                                        timeout: 10000,
+                                        url: "reports/" + reportId+ "/name/" + $(".save-reportSetName").val(),
+                                        success: function(data){
+                                            // 根据返回值进行判断
+                                            if (data["status"] === 0) {
+                                                dialog.success(data["statusInfo"]);
+                                            }
+                                            else {
+                                                dialog.error(data["statusInfo"]);
+                                            }
+                                        }
+                                    });
+                                    $(this).dialog('close');
+                                },
+                                '取消': function () {
+                                    $(this).dialog('close');
+                                }
+                            }
+                        }
+                    });
+                }
             },
 
             /**
@@ -583,27 +647,6 @@ define([
                     that.editCompView.activeComp();
                     that.initSnptHeight();
                 }, 2000);
-            },
-
-            /**
-             * 添加默认值
-             *
-             * @param {event} event 事件焦点（下拉框多选框）
-             * @public
-             */
-            changeSelectDefault: function (event) {
-                var that = this;
-                var $target = $(event.target);
-                var $nowComp = $target.parent().parent().parent();
-                var compId = $nowComp.attr('data-comp-id');
-                var $comp = that.$el.find('.report').find('.component-item');
-                var checked = $target[0].checked;
-                $comp.each(function () {
-                    var $this = $(this);
-                    if ($this.attr('data-comp-id') == compId) {
-                        $this.attr('data-default-value', checked);
-                    }
-                });
             }
         });
     }

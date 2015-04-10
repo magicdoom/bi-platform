@@ -266,6 +266,11 @@ $namespace('di.shared.ui');
      * @protected
      */
     DI_TABLE_CLASS.$renderMain = function (data, ejsonObj, options) {
+        // 当数据为null时，清空视图
+        if(data === null) {
+            this.$handleDataError(ejsonObj.status, ejsonObj, options);
+            return;
+        }
         this.$di('getEl').style.display = '';
 
         foreachDo(
@@ -344,17 +349,27 @@ $namespace('di.shared.ui');
         }
 
         // 页信息
+        var countInfotpl;
+        if(this._uCountInfo){
+            countInfotpl = this._uCountInfo.$di('getDef').tpl
+        }
         this._uCountInfo && this._uCountInfo.$di(
             'setData', 
             {
                 args: {
                     totalRecordCount: data.pageInfo.totalRecordCount,
                     currRecordCount: data.pageInfo.currRecordCount
-                }
+                },
+                tpl: countInfotpl
             },
             setDataOpt
         );
 
+        // 当表格数据获取异常时（主要针对callback指标），需要弹出异常原因
+        if (data.tableData && data.tableData.others) {
+            DIALOG.alert(data.tableData.others);
+        }
+        
         /**
          * 渲染事件
          *
@@ -770,8 +785,8 @@ $namespace('di.shared.ui');
          * @event
          */
         this.$di('dispatchEvent', this.$diEvent('dataerror', options));
-
-        DIALOG.alert('获取表格数据异常：' + ejsonObj.statusInfo);
+        // 嵌入第三方系统之后，频繁切换页签刷新报表会因为请求中断而弹出该提示框，故先注释掉
+        // DIALOG.alert('获取表格数据异常：' + ejsonObj.statusInfo);
     };
 
     /**

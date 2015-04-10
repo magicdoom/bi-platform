@@ -31,7 +31,7 @@ import org.apache.lucene.index.IndexableField;
  * @author lijin
  *
  */
-public class ResultRecord implements Serializable {
+public class ResultRecord implements Serializable,TesseractResultRecord {
     
     /**
      * serialVersionUID
@@ -98,20 +98,15 @@ public class ResultRecord implements Serializable {
         this.meta = new Meta(fieldNameList.toArray(new String[0]));
     }
     
-    /**
-     * 
-     * 根据下标获取字段
-     * 
-     * @param columnIndex
-     *            下标
-     * @return Object
-     * @throws NoSuchFieldException
-     *             ,可能抛出异常
+    /*
+     * (non-Javadoc)
+     * @see com.baidu.rigel.biplatform.tesseract.resultset.isservice.TesseractResultRecord#getField(int)
      */
     public Serializable getField(int columnIndex) throws NoSuchFieldException {
         if (this.fieldArray != null && columnIndex < this.fieldArray.length) {
             return fieldArray[columnIndex];
         }
+        System.out.println(this.toString());
         throw new NoSuchFieldException("FieldIndex:" + columnIndex);
     }
     

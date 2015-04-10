@@ -99,19 +99,21 @@ public class DataModelBuilder {
         this.queryContext = queryContext;
     }
 
-    public DataModel build() throws MiniCubeQueryException {
+    public DataModel build(boolean isContainsCallbackMeasure) throws MiniCubeQueryException {
         DataModel dataModel = new DataModel();
         /**
          * get the order of row head
          */
         List<List<String>> rowNodeName = new ArrayList<List<String>>();
-        List<MemberTreePropResult> rowHeadNames = getHeadNameByOrder(queryContext.getRowMemberTrees(), rowNodeName);
+        List<MemberTreePropResult> rowHeadNames = getHeadNameByOrder(queryContext.getRowMemberTrees(), 
+            rowNodeName, isContainsCallbackMeasure);
 
         /**
          * get the order of col head
          */
         List<List<String>> columnNodeName = new ArrayList<List<String>>();
-        List<MemberTreePropResult> colHeadNames = getHeadNameByOrder(queryContext.getColumnMemberTrees(), columnNodeName);
+        List<MemberTreePropResult> colHeadNames = getHeadNameByOrder(queryContext.getColumnMemberTrees(), 
+            columnNodeName, false);
         // 构造交叉后的行列取数的KEY
         List<String> rowAxisKeys = generateAxisKeys(rowNodeName, null);
         List<String> columnAxisKeys = generateAxisKeys(columnNodeName, queryContext.getQueryMeasures());
@@ -140,7 +142,8 @@ public class DataModelBuilder {
                             columnBaseDatas.get(i).add(parseData.get(rowName).get(columnName));
                         } else {
                             // 填充一个null对象
-                            columnBaseDatas.get(i).add(null);
+                            columnBaseDatas.get (i).add (null);
+//                            columnBaseDatas.get(i).add(BigDecimal.ZERO);
                         }
                     }
                 }
@@ -254,7 +257,8 @@ public class DataModelBuilder {
      * @param rowNodeName
      * @return 维度查询KEY列表
      */
-    private List<MemberTreePropResult> getHeadNameByOrder(List<MemberNodeTree> memberNodes, List<List<String>> rowNodeName) {
+    private List<MemberTreePropResult> getHeadNameByOrder(List<MemberNodeTree> memberNodes, 
+            List<List<String>> rowNodeName, boolean isContainsCallbackMeasure) {
         List<MemberTreePropResult> headNames = Lists.newArrayList();
         for (int i = 0; i < memberNodes.size(); i++) {
             MemberNodeTree nodeTree = memberNodes.get(i);
@@ -262,7 +266,7 @@ public class DataModelBuilder {
                 return headNames;
             }
             MemberTreePropResult treeProp = new MemberTreePropResult();
-            rowNodeName.add(getNodeName(nodeTree, null, treeProp));
+            rowNodeName.add(getNodeName(nodeTree, null, treeProp, isContainsCallbackMeasure));
             if(MapUtils.isEmpty(treeProp.getQueryPropers())) {
                 log.warn("query proper:{} is null,skip",nodeTree);
                 continue;
@@ -306,24 +310,30 @@ public class DataModelBuilder {
      * @param nodeNames 节点列表
      * @return 查询的节点的名称列表
      */
-    private List<String> getNodeName(MemberNodeTree nodeTree, List<String> nodeNames, MemberTreePropResult treePropResult) {
+    private List<String> getNodeName(MemberNodeTree nodeTree, List<String> nodeNames, 
+            MemberTreePropResult treePropResult, boolean isContainsCallbackMeasure) {
         if (nodeNames == null) {
             nodeNames = new ArrayList<String>();
         }
         String prop = nodeTree.getQuerySource();
         if (StringUtils.isNotBlank(nodeTree.getName())) {
-            if (MetaNameUtil.isAllMemberName(nodeTree.getName()) && nodeTree.getChildren().isEmpty()) {
+            final boolean allMemberName = MetaNameUtil.isAllMemberName(nodeTree.getName());
+            if (allMemberName && nodeTree.getChildren().isEmpty()) {
                 return nodeNames;
             }
             if(StringUtils.isNotBlank(prop)) {
-                nodeNames.add(prop + PROP_KEY_SPLIT + nodeTree.getName());
+                if (allMemberName && isContainsCallbackMeasure) {
+                    nodeNames.add(prop + PROP_KEY_SPLIT + TesseractConstant.SUMMARY_KEY);
+                } else {
+                    nodeNames.add(prop + PROP_KEY_SPLIT + nodeTree.getName());
+                }
                 treePropResult.getQueryPropers().put(prop, new HashSet<String>());
             }
         }
         if (CollectionUtils.isNotEmpty(nodeTree.getChildren())) {
             String childProp = null;
             for (MemberNodeTree child : nodeTree.getChildren()) {
-                getNodeName(child, nodeNames, treePropResult);
+                getNodeName(child, nodeNames, treePropResult, isContainsCallbackMeasure);
                 if (childProp == null) {
                     childProp = child.getQuerySource();
                 }

@@ -17,14 +17,18 @@ package com.baidu.rigel.biplatform.ma;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.redis.RedisAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.context.embedded.FilterRegistrationBean;
 import org.springframework.boot.context.web.SpringBootServletInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportResource;
 
+import com.baidu.rigel.biplatform.cache.util.ApplicationContextHelper;
 import com.baidu.rigel.biplatform.ma.resource.filter.UniversalContextSettingFilter;
 
 /**
@@ -36,8 +40,8 @@ import com.baidu.rigel.biplatform.ma.resource.filter.UniversalContextSettingFilt
  */
 @Configuration
 @ComponentScan
-@EnableAutoConfiguration
-@ImportResource("applicationContext.xml")
+@EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, RedisAutoConfiguration.class})
+@ImportResource({"conf/applicationContext-cache.xml","applicationContext.xml"})
 public class BiPlatformApplication extends SpringBootServletInitializer {
     
     @Bean
@@ -54,7 +58,8 @@ public class BiPlatformApplication extends SpringBootServletInitializer {
      * @param args 外部参数
      */
     public static void main(String[] args) {
-        SpringApplication.run(BiPlatformApplication.class, args);
+        ConfigurableApplicationContext context = SpringApplication.run(BiPlatformApplication.class, args);
+        ApplicationContextHelper.setContext (context);
     }
     
     /**

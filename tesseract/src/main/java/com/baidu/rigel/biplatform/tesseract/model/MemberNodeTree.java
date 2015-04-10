@@ -308,10 +308,20 @@ public class MemberNodeTree implements Serializable, Comparable<MemberNodeTree> 
         if(CollectionUtils.isNotEmpty(this.children)) {
             if(sortType == SortType.DESC) {
                 Collections.sort(this.children, (o1, o2) -> {
+                		if(o1.getCaption().equals("百度")){
+                			return 1;
+                		} else if(o2.getCaption().equals("百度")) {
+                			return -1;
+                		}
                     return o2.getName().compareTo(o1.getName());
                 });
             } else {
                 Collections.sort(this.children, (o1, o2) -> {
+                	if(o1.getCaption().equals("百度")){
+            			return -1;
+            		} else if(o2.getCaption().equals("百度")) {
+            			return 1;
+            		}
                     return o1.getName().compareTo(o2.getName());
                 });
             }

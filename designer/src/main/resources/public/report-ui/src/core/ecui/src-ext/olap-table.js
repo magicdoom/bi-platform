@@ -422,7 +422,7 @@
         this.$dispose = new Function();
         disposeControl(this);
         this.$dispose = disposeFunc;
-    }
+    };
 
     /**
      * 渲染HTML
@@ -489,9 +489,6 @@
             }
             html.push('</thead>');
 
-
-
-
             // 表内容
             html.push('<tbody>');
             if (this._bInvalid || !datasource.length) {
@@ -536,7 +533,7 @@
                             rowHeadFields // TODO:这一块可能有问题，需要监测一下
                         );
                     }
-                    html.push('</tr>')
+                    html.push('</tr>');
                 }
             }
         }
@@ -593,7 +590,7 @@
                 }
             }
         };
-    }
+    };
     /**
      * 渲染上方表头节点
      *
@@ -602,7 +599,7 @@
     UI_OLAP_TABLE_CLASS.$renderHCell = function(
         // 只有最底层有colField
         html, colDefItem, wrap, x, y
-        ) {
+    ) {
         var type = this.getType();
         var classStr = [type + '-hcell'];
         var classSortStr;
@@ -611,6 +608,8 @@
         var span = [];
         var innerStr = '';
         var tooltipStr = '';
+        var tooltipTag = '';
+        var dragStr = '';
 
         wrap = objWrap(wrap);
 
@@ -634,21 +633,27 @@
         if(colDefItem && colDefItem.uniqueName){
             attrStr.push('uniqueName="' + colDefItem.uniqueName + '"');
         }
+        // 如果是维度列，就不显示tooltip图标
+        if (!wrap.colSpan) {
+            tooltipTag += '<span class="'+ type + '-head-tips" ' + tooltipStr + '">&nbsp;</span>';
+            //dragStr += '<span class="' + type + '-head-drag"></span>';
+        }
         //attrStr.push('title='+"'我就想试试title的字能有多长'");
         innerStr = this.$renderCellInner('HCELL', null, wrap, attrStr, classStr, styleStr); // 列头文本
         // 如果是ie8以下版本，需要在innerCell外面套一层div，设置表头的margin属性，
         // 不然文本过多的话会显示不全
         // TODO:如果是最后一个，就不加drag
         // var useBag = dom.ieVersion < 8;
+
         var strThContent = (innerStr === '')
             ? ''
             : (
                 '<div class="' + type + '-head-th-content">'
                 + '<span class="'+ type + '-head-font">' + innerStr + '</span>'
                 + '<span class="'+ classSortStr + '"></span>'
-                + '<span class="'+ type + '-head-tips" ' + tooltipStr + '">?</span>'
+                + tooltipTag
                 + '</div>'
-                + '<span class="' + type + '-head-drag"></span>'
+                + dragStr
             );
         html.push(
             '<th ', span.join(' '), ' ', attrStr.join(' '), ' ',
@@ -675,27 +680,32 @@
 
         wrap = objWrap(wrap);
 
-        span.push(wrap.colspan ? ' colspan="' + wrap.colspan + '" ' : '');
-        span.push(wrap.rowspan ? ' rowspan="' + wrap.rowspan + '" ' : '');
+        span.push(wrap.colspan ?  ' colspan="' + wrap.colspan  +  '" ' : '');
+        span.push(wrap.rowspan ?  ' rowspan="' + wrap.rowspan  +  '" ' : '');
         // 先为左侧添加背景色
         // FIXME:实现不是很好,目前只测到两个维度，多个维度时，需要待测
         if (rowDefine) {
             var rowDefines = rowDefine[y];
             var rDefLen = rowDefines.length;
+            // 多个维度时对左侧表头背景色的处理
             if (rDefLen > 1) {
-                if (rowDefines[0].indent >= 1) {
+                if (rowDefines[0].indent != 1) {
                     classStr.push(type + '-expand-background');
-                }
-                else {
-                    if (wrap.indent !== 0) {
-                        classStr.push(type + '-expand-background');
+                    if (rowDefines[0].indent < 1) {
+                        if (wrap.indent == 0) {
+                            classStr.push(type + '-expand-font');
+                        }
                     }
                 }
             }
+            // 单独维度时对左侧表头背景色的处理
             else {
-                // 如果不是第一层级，全部加底色
-                if (rowDefines[0].indent >= 1) {
+                if (rowDefines[0].indent > 1) {
                     classStr.push(type + '-expand-background');
+                }
+                // 单独维度时对左侧表头汇总行加粗
+                else if (rowDefines[0].indent == 0) {
+                    classStr.push(type + '-expand-font');
                 }
             }
         }
@@ -726,7 +736,6 @@
      * @protected
      */
     UI_OLAP_TABLE_CLASS.$renderCell = function(html, colDefItem, rowDefItem, wrap, x, y, rowDefine) {
-        console.log('x:' + x + ';y: ' + y);
         var type = this.getType();
         var classStr = [type + '-ccell'];
         var styleStr = [];
@@ -736,21 +745,26 @@
         if (rowDefine) {
             var rowDefines = rowDefine[y];
             var rDefLen = rowDefines.length;
+            // 多个维度时对内容区域背景色的处理
             if (rDefLen > 1) {
-                if (rowDefines[0].indent >= 1) {
+                if (rowDefines[0].indent != 1) {
+                    // 背景色
                     classStr.push(type + '-expand-background');
-                }
-                else {
-                    if (rowDefines[rDefLen - 1].expand !== true) {
-                        classStr.push(type + '-expand-background');
+                    if (rowDefines[0].indent < 1) {
+                        if (rowDefines[rDefLen - 1].expand == true) {
+                            classStr.push(type + '-expand-font');
+                        }
                     }
                 }
-
             }
+            // 单独维度时对内容区域背景色的处理
             else {
-                // 如果不是第一层级，全部加底色
-                if (rowDefines[0].indent >= 1) {
+                if (rowDefines[0].indent > 1) {
                     classStr.push(type + '-expand-background');
+                }
+                // 单独维度时对内容区域汇总行加粗
+                else if (rowDefines[0].indent == 0) {
+                    classStr.push(type + '-expand-font');
                 }
             }
         }
@@ -776,7 +790,8 @@
                 ' style="', styleStr.join(' '),
                 '" class="', classStr.join(' '),
             '">',
-            innerStr,
+            //'<div class="ui-table-cell-infor">' + innerStr + '</div><div class="ui-table-cell-empty"></div>',
+            '<div class="ui-table-cell-text">' + innerStr + '</div>',
             '</td>'
         );
     };
@@ -810,7 +825,7 @@
         if (wrap.indent) {
             // margin-left会用来判断indent的点击事件，所以结构不能变
             attrStr.push('data-indent="' + wrap.indent + '"');
-            indentStyle = 'margin-left:' + TREE_INDENT * wrap.indent + 'px;';
+            indentStyle = 'margin-left:' + (parseInt(TREE_INDENT * wrap.indent) - 15) + 'px;';
         }
 
         if (wrap.drillByLink) {
@@ -862,11 +877,11 @@
                     + type + '-tree-item">',
                     '<div class="' + clz + '"></div>',
                 value,
-                '</div>',
+                '</div>'
             ].join('');
         }
         else if (indentStyle) {
-            value = '<div style="' + indentStyle
+            value = '<div class="' + type + '-default-icon" style="' + indentStyle
                 + 'text-align:left;">' + value + '</div>';
         }
 
@@ -1072,16 +1087,18 @@
             }
         }
         // 单选
-        else if (rowCheckMode == 'SELECT') {
+        else if (rowCheckMode == 'SELECT' || rowCheckMode == 'SELECTONLY') {
             var rows = this._aRows || [];
             for (var i = 0, row, cell; i < rows.length; i ++) {
                 if ((row = rows[i]) && row._bRowChecked) {
                     row._bRowChecked = false;
                     removeClass(row.getMain(), type + '-row-selected');
+                    removeClass(getParent(row._eFill), type + '-row-selected');
                 }
             }
             rowCtrl._bRowChecked = true;
             addClass(rowCtrl.getMain(), type + '-row-selected');
+            addClass(getParent(rowCtrl._eFill), type + '-row-selected');
             rowCheck.rowCheckCount = 1;
         }
 
@@ -1255,7 +1272,8 @@
         // 左表头节点
         if (el.getAttribute('data-row-h') && (ec = el.getAttribute('data-e-c'))) {
             if (getMouseX(this) <=
-                toNumber(getStyle(el.firstChild, 'marginLeft'))
+                toNumber(getStyle(el, 'paddingLeft'))
+                + toNumber(getStyle(el.firstChild, 'marginLeft'))
                 + toNumber(getStyle(el.firstChild, 'paddingLeft'))
                 ) {
                 var pos;
@@ -1293,6 +1311,10 @@
                 if (rowCheckMode == 'SELECT') {
                     tableCtrl.$setRowChecked(rowCtrl, true);
                     eventName = 'rowselect';
+                }
+                else if (rowCheckMode == 'SELECTONLY') {
+                    tableCtrl.$setRowChecked(rowCtrl, true);
+                    eventName = 'rowselectonly';
                 }
                 else if (rowCheckMode == 'CHECK') {
                     if (rowChecked && tableCtrl.$setRowChecked(rowCtrl, false)) {

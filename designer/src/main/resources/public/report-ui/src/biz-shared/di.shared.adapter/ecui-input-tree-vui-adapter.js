@@ -62,7 +62,8 @@ $namespace('di.shared.adapter');
                 [
                     value,
                     function (data) {
-                        func((data.datasource || {}).children || []);
+                        // func((data.datasource || {}).children || []);
+                        func((data.datasource || {}) || []);
                     }
                 ]
             );
@@ -83,6 +84,17 @@ $namespace('di.shared.adapter');
     function setData(data) {
         if (!data) {
             return;
+        }
+        // FIXME:渊源,这一块会重写个input-tree继承于此，然后再修改
+        // 基础数据结构是object，但是不支持根节点是多个（也就是第一层级只能是一个）
+        // 为了支持这种情况，现在返回的数据结构是array，但是代码渲染不支持磁结构，就模拟一个object
+        // 树结构渲染完毕后，再把第一层的根节点隐藏掉
+        if (Object.prototype.toString.call(data.datasource) === '[object Array]') {
+            data.datasource = {
+                "text": "全部",
+                "value": "1",
+                children: data.datasource
+            };
         }
 
         this.setData(

@@ -171,14 +171,25 @@ public class CallbackDimensionMemberServiceImpl implements DimensionMemberServic
             @SuppressWarnings("unchecked")
             List<CallbackDimTreeNode> posTree = (List<CallbackDimTreeNode>) response.getData();
             if (posTree.size() != 1) {
-                throw new MiniCubeQueryException("pos tree return over 1 node:" + posTree);
+                CallbackDimTreeNode node = findTreeNodeByName(posTree, name);
+                return createMemberByPosTreeNode(node, level, null);
             }
+            // TODO 
             
             return createMemberByPosTreeNode(posTree.get(0), level, null);
             
         } else {
             throw new RuntimeException(response.getMessage());
         }
+    }
+
+    private CallbackDimTreeNode findTreeNodeByName(List<CallbackDimTreeNode> posTree, String name) {
+        for (CallbackDimTreeNode node : posTree) {
+            if (node.getId().equals(name)) {
+                return node;
+            }
+        }
+        return null;
     }
 
     /**

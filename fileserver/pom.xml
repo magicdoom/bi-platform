@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.baidu.rigel</groupId>
         <artifactId>biplatform</artifactId>
-        <version>1.3.0-RELEASE</version>
+        <version>1.3.1-RELEASE</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
    
@@ -72,19 +72,30 @@
     </dependencies>
     <build>
         <plugins>
-                   <plugin>
-                       <groupId>org.apache.maven.plugins</groupId>
-                       <artifactId>maven-jar-plugin</artifactId>
-                       <configuration>
-                           <archive>
-                               <manifest>
-                                   <mainClass></mainClass>
-                                   <addClasspath>true</addClasspath>
-                                   <classpathPrefix>lib</classpathPrefix>
-                               </manifest>
-                           </archive>
-                       </configuration>
-                   </plugin>
+            <plugin>
+				    <artifactId>maven-assembly-plugin</artifactId>  
+		             <groupId>org.apache.maven.plugins</groupId>  
+				    <configuration>  
+				        <appendAssemblyId>false</appendAssemblyId>  
+				        <descriptorRefs>  
+				            <descriptorRef>jar-with-dependencies</descriptorRef>  
+				        </descriptorRefs>  
+				        <archive>  
+				            <manifest>  
+				                <mainClass>com.baidu.rigel.biplatform.ma.file.serv.FileServer</mainClass>  
+				            </manifest>  
+				        </archive>  
+				    </configuration>  
+				    <executions>  
+				        <execution>  
+				            <id>make-assembly</id>  
+				            <phase>package</phase>  
+				            <goals>  
+				                <goal>assembly</goal>  
+				            </goals>  
+				        </execution>  
+				    </executions> 
+		    </plugin>
            </plugins>
        </build>
 </project>

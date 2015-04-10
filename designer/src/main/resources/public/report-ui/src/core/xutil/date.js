@@ -490,7 +490,7 @@
         }
 
         replacer(/d/ig,day);
-        replacer(/hh/ig, hour);
+        replacer(/hh/ig, pad(hour, 2));
         replacer(/h/ig, hour);
         replacer(/mm/ig, pad(min, 2));
         replacer(/m/ig, min);

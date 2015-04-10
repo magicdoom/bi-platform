@@ -314,6 +314,9 @@ public class ReportDesignModelManageServiceImpl implements ReportDesignModelMana
                             }
                         }
                         area.getLogicModel().removeRow(olapElementId);
+                    } else if (isQueryCompArea(area.getType())) {
+                    	area.getLogicModel().removeRow(olapElementId);
+                    	area.getLogicModel().getSelectionDims().remove(olapElementId);
                     } else {
                         area.getLogicModel().removeRow(olapElementId);
                     }
@@ -352,6 +355,12 @@ public class ReportDesignModelManageServiceImpl implements ReportDesignModelMana
         return null;
     }
 
+    private boolean isQueryCompArea(ExtendAreaType type) {
+        return type == ExtendAreaType.SELECT
+                || type == ExtendAreaType.MULTISELECT
+                || type == ExtendAreaType.SINGLE_DROP_DOWN_TREE;
+    }
+    
     /**
      * {@inheritDoc}
      */

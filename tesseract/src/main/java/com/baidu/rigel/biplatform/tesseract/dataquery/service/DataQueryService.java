@@ -24,7 +24,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.baidu.rigel.biplatform.tesseract.isservice.meta.SqlQuery;
 import com.baidu.rigel.biplatform.tesseract.qsservice.query.vo.QueryRequest;
-import com.baidu.rigel.biplatform.tesseract.resultset.TesseractResultSet;
+import com.baidu.rigel.biplatform.tesseract.resultset.isservice.SearchIndexResultSet;
 
 /**
  * 
@@ -60,7 +60,7 @@ public interface DataQueryService {
      *            limit第二个参数
      * @return TesseractResultSet
      */
-    TesseractResultSet queryForDocListWithSQLQuery(SqlQuery sqlQuery, DataSource dataSource,
+    SearchIndexResultSet queryForDocListWithSQLQuery(SqlQuery sqlQuery, DataSource dataSource,
         long limitStart, long limitEnd);
     
     
@@ -73,7 +73,7 @@ public interface DataQueryService {
      * @param queryRequest
      * @return
      */
-    TesseractResultSet queryForListWithSQLQueryAndGroupBy(SqlQuery sqlQuery, DataSource dataSource,
+    SearchIndexResultSet queryForListWithSQLQueryAndGroupBy(SqlQuery sqlQuery, DataSource dataSource,
             long limitStart, long limitEnd, QueryRequest queryRequest);
     
     /**

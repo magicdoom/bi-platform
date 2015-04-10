@@ -6,6 +6,7 @@
 @import url(component/widget.css);
 @import url(component/button.css);
 @import url(component/form.css);
+@import url(component/spectrum/spectrum.css);
 
 /* 业务逻辑 */
 @import url(biz/nav.css);

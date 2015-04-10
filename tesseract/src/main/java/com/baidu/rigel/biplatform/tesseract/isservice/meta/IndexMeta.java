@@ -61,6 +61,7 @@ public class IndexMeta extends StoreMeta implements Serializable {
      */
     private static final long serialVersionUID = 3211554735307147462L;
     
+    
     /**
      * clusterName 所属集群名称
      */
@@ -115,6 +116,11 @@ public class IndexMeta extends StoreMeta implements Serializable {
      * 2、INDEX_UNINIT，对应的索引数据还没有，不能提供服务 3、INDEX_AVAILABLE_NEEDMERGE，需要进行索引合并
      */
     private IndexState idxState;
+    
+    /**
+     * 索引元数据锁：当更新或者建索引时，加锁
+     */
+    private Boolean locked=Boolean.FALSE;
     
     /**
      * 记录索引更新的版本（以第一个索引分片更新完的时间：System.currentTimeMillis()为当前的版本） 其它分片在执行：
@@ -531,8 +537,24 @@ public class IndexMeta extends StoreMeta implements Serializable {
     public void setMeasureInfoMergeSet(Set<String> measureInfoMergeSet) {
         this.measureInfoMergeSet = measureInfoMergeSet;
     }
+    
+    
 
-    /*
+    /**
+	 * @return the locked
+	 */
+	public Boolean getLocked() {
+		return locked;
+	}
+
+	/**
+	 * @param locked the locked to set
+	 */
+	public void setLocked(Boolean locked) {
+		this.locked = locked;
+	}
+
+	/*
      * (non-Javadoc)
      * 
      * @see java.lang.Object#hashCode()

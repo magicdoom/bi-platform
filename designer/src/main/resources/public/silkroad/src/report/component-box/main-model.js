@@ -11,7 +11,8 @@ define([
         'report/component-box/components/form-config',
         'report/component-box/components/select-config',
         'report/component-box/components/text-config',
-        'report/component-box/components/h-button-config'
+        'report/component-box/components/h-button-config',
+        'report/component-box/components/ecui-input-tree-config'
     ],
     function (
         tableConfig,
@@ -21,7 +22,8 @@ define([
         formConfig,
         selectConfig,
         textConfig,
-        hbtnConfig
+        hbtnConfig,
+        ecuiInputTreeConfig
     ) {
         var rootId = 'snpt';
 
@@ -74,7 +76,8 @@ define([
                             selectConfig,
                             liteolapConfig,
                             textConfig,
-                            hbtnConfig
+                            hbtnConfig,
+                            ecuiInputTreeConfig
                         ]
                     }
                 ],

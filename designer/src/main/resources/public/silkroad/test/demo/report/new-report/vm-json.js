@@ -1655,6 +1655,120 @@ define(function () {
                     }
                 ]
             }
+        },
+        // 树结构
+        treeChart: {
+            html: [
+                '<div class="di-o_o-block cond-block" data-o_o-di="snpt1.cpnt-form1">',
+                ' <div class=" di-o_o-line">',
+                '<div class=" di-o_o-item" data-o_o-di="snpt1.cpnt-form1-vu-1399874275096_96">',
+                '</div>',
+                '</div>',
+                '</div>',
+                '<div class="di-o_o-line" style="position:static">',
+                '<div class="di-o_o-item" data-o_o-di="snpt1.vu-form1-confirm1">',
+                '</div>',
+                '</div>',
+                '<div class="di-o_o-block" data-o_o-di="snpt1.cpnt-chart1">',
+                '<div data-o_o-di="snpt1.vu-chart1"></div>',
+                '</div>'
+            ],
+            json: {
+                "desc": "查询条件||多维图形||多维表格",
+                "diKey": "DEPICT",
+                "clzDefs": [
+                    {
+                        "clzKey": "OLAP_TABLE",
+                        "dataOpt": {
+                            "emptyHTML": "未查询到相关数据"
+                        }
+                    },
+                    {
+                        "clzKey": "ECUI_SELECT",
+                        "dataOpt": {
+                            "optionSize": 10
+                        }
+                    }
+                ],
+                "entityDefs": [
+                    {
+                        "id": "snpt1",
+                        "clzType": "SNIPPET"
+                    },
+                    {
+                        "id": "snpt1.cpnt-form1",
+                        "clzType": "COMPONENT",
+                        "clzKey": "DI_FORM",
+                        "reportType": "RTPL_VIRTUAL",
+                        "init": {
+                            "action": {
+                                "name": "sync"
+                            }
+                        },
+                        "sync": {
+                            "viewDisable": "ALL"
+                        },
+                        "vuiRef": {
+                            "input": [
+                                "snpt1.cpnt-form1-vu-1399874275096_96"
+                            ],
+                            "confirm": "snpt1.vu-form1-confirm1"
+                        },
+                        "dataOpt": {
+                            "submitMode": "IMMEDIATE"
+                        },
+                        "reportTemplateId": "RTPL_VIRTUAL_ID"
+                    },
+                    {
+                        "id": "snpt1.vu-form1-confirm1",
+                        "clzType": "VUI",
+                        "clzKey": "H_BUTTON",
+                        "dataOpt": {
+                            "skin": "ui-normal-btn",
+                            "text": "查询"
+                        }
+                    },
+                    {
+                        "id": "snpt1.cpnt-form1-vu-1399874275096_96",
+                        "clzType": "VUI",
+                        "clzKey": "ECUI_INPUT_TREE",
+                        "name": "38f9387fd4261d805c33f9d866f0d780",
+                        "cfgOpt": { "async": true }
+                    },
+                    {
+                        "id": "snpt1.cpnt-chart1",
+                        "clzType": "COMPONENT",
+                        "clzKey": "DI_ECHART",
+                        "sync": { "viewDisable": "ALL" },
+                        "vuiRef": {
+                            "mainChart": "snpt1.vu-chart1"
+                        },
+                        "interactions": [
+                            {
+                                "events": [
+                                    { "rid": "snpt1.cpnt-form1", "name": "submit" },
+                                    { "rid": "snpt1.cpnt-form1", "name": "dataloaded" }
+                                ],
+                                "action": { "name": "sync" },
+                                "argHandlers": [
+                                    ["clear"],
+                                    ["getValue", "snpt1.cpnt-form1"]
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "id": "snpt1.vu-chart1",
+                        "clzType": "VUI",
+                        "clzKey": "E_CHART",
+                        "dataOpt": {
+                            "height": 260,
+                            "legend": { "xMode": "pl" },
+                            "weekViewRange": [null, "-1d"]
+                        }
+                    }
+                ]
+            }
         }
     };
     return VmJson;

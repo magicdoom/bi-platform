@@ -12,3 +12,5 @@
 /build.sh
 /designer (1).iml
 /designer.iml
+.buildpath
+/bin/

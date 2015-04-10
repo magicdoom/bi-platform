@@ -32,9 +32,3 @@
 
 ##用户手册：
 构建中（2014-11-30），和[Milestonev1.1.0](https://github.com/Baidu-ecom/bi-platform/milestones/BI_Platform%201.1.0 "v1.1.0")同步发布
-
-##最新动态
-
-全新的报表平台将在新年与你不见不散！
-
-

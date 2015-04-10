@@ -105,6 +105,9 @@ public class ReportParam implements Serializable {
         this.name = name;
     }
     
-    
+    @Override
+    public String toString() {
+        return "[name : " + name + " , elementId : " + elementId + " ]";
+    }
 
 }

@@ -19,6 +19,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -78,7 +79,7 @@ public final class FileServerClient {
         ChannelFuture future = null;
         try {
             final Response rs = new Response(ResponseStatus.FAIL, "failed", null);
-            ChannelHandlerAdapter requestHandler = new ChannelHandlerAdapter() {
+            ChannelHandlerAdapter requestHandler = new ChannelInboundHandlerAdapter() {
                 
                 /**
                  * {@inheritDoc}
@@ -159,8 +160,6 @@ public final class FileServerClient {
             }
             work.shutdownGracefully();
         }
-//        Response rs = new Response(ResponseStatus.FAIL, message, null);
-//        return rs;
     }
     
     

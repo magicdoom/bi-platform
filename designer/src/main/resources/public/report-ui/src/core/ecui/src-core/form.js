@@ -110,7 +110,7 @@ _uClose         - 关闭按钮
                 // 初始化关闭按钮
                 this._uClose = $fastCreate(this.Close, el[1], this);
                 if (options.closeButton === false) {
-                    this._uClose.$hide();
+                    this._uClose.$show();
                 }
 
                 this.$setBody(el[2]);
